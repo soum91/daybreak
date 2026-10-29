@@ -174,7 +174,12 @@ static void CheckWakePlanner(void) {
     return YES;
 }
 - (void)previewCalendar {[self withCalendar:^{[self calculatePlan];}];}
-- (void)applyCalendar {[self withCalendar:^{if([self calculatePlan]){self.picker.date=self.plan[@"wake"];[self runOnDevice];}}];}
+- (void)applyCalendar {[self withCalendar:^{if([self calculatePlan]){
+    NSDate *cutoff=[NSCalendar.currentCalendar dateBySettingHour:12 minute:0 second:0 ofDate:NSDate.now options:0];
+    if([NSDate.now compare:cutoff]==NSOrderedAscending){[self.probe note:@"Tomorrow’s plan is ready. Apply it after noon so Siri’s next Sleep alarm targets tomorrow. Manual time testing remains available below."];return;}
+    if([self.plan[@"wake"] compare:self.plan[@"morning"]]==NSOrderedAscending){[self.probe note:@"This plan crosses into the previous date. Review the full date and use manual time testing if intended. No calendar request sent."];return;}
+    self.picker.date=self.plan[@"wake"];[self runOnDevice];
+}}];}
 - (void)runCalendarURL {
     [self withCalendar:^{if(![self calculatePlan])return;
         if(!self.automationSwitch.on){[self.probe note:@"Calendar URL preview only. Enable daily URL application to send automatically."];return;}
