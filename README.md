@@ -1,51 +1,40 @@
 # Daybreak
 
-An experimental iPhone diagnostic for the **actual Clock → Sleep | Wake Up alarm**.
+Calendar-based wake planning for the actual Clock → Sleep | Wake Up alarm, using an on-device XCTest Siri runner.
 
-## New: on-device Siri runner
+## Current behavior
 
-The direct MobileTimer route was blocked by the iOS 27 sandbox. A separate **DaybreakRunner.ipa** now tests a different route: a genuine XCTest runner running on the iPhone itself, using Apple's Siri testing service. It uses a mounted developer image and development signing, which can be obtained with a free Apple ID. It does not require a computer during operation. The `.xctest` plug-in must also be signed correctly.
+- Choose one calendar or all calendars. Read tomorrow's timed events starting before noon, skip all-day/cancelled/declined events, and subtract 0–720 preparation minutes from the earliest event.
+- With no morning event, use a saved fallback (default 08:30). Preview always shows the date and time, then Apply recalculates before confirmation.
+- A separate button asks Siri to enable the next Sleep alarm. That enable command needs device verification.
+- Repeated requests are rejected while queued, executing, cooling down for 60 seconds, or awaiting reset after an activation exception. No automatic Siri retry or app switch interrupts the dialog.
+- The older unsupported direct-access and Add Voice Shortcut controls are removed from the main screen. Their research implementation remains in the repository.
 
-Install/setup instructions and the distinction between building, launching and actually changing an alarm are in [Runner/README.md](Runner/README.md). This remains an on-device test, not proven calendar automation. The legacy diagnostics below are retained for reference; they are not the recommended route on the device that reported a sandbox denial.
+A device report demonstrates that the runner reaches Siri and receives a Sleep | Wake Up confirmation. Other reports show ambiguous alarm dialogs and XCTest interruptions. Daybreak does not claim an alarm changed merely because Siri activation returned. Check the actual Sleep entry in Clock, dismiss Siri, and clear the previous request before a manual retry. Bedtime and Sleep Focus are unchanged.
 
-## Current build
+## Install
 
-This is a feasibility probe, not a finished automatic alarm app. Calendar reading, bedtime changes, Sleep Focus control and unattended scheduling are not implemented yet. Siri changing an alarm manually does not prove a third-party app can do it.
+Download both IPAs from the latest release. Sign Daybreak normally. **DaybreakRunner requires development signing**, including its nested .xctest bundle; a distribution certificate is insufficient. A free Apple ID can provide development signing. Mount the developer image with your existing on-device developer tool, start Runner, approve UI Automation, and return to Daybreak. No computer is required during operation.
 
-The app has two separate probes:
+See [Runner/README.md](Runner/README.md) for detailed requirements.
 
-1. **Siri shortcut support:** inspect `INUpdateAlarmIntent`, discover its set-time operation from runtime enum names, target a real Sleep alarm, set `proposedTime`, then ask the standard Add Voice Shortcut UI whether it can save it. Construction, serialization and saving are logged separately. None is called successful execution. If reading the actual Sleep alarm is denied, this probe stops rather than inventing an identifier or matching all alarms.
-2. **Direct MobileTimer update:** read the actual next future Sleep alarm and attempt a time/enabled update only if it is already a single-time override. A recurring/base schedule is never edited. Save the original snapshot first, await the asynchronous result with a timeout, then re-read through a new manager. A matching read-back still needs visual confirmation in Clock.
+## Daily evening trigger
 
-These observed private interfaces may be absent, changed, or permission-protected on iOS 27. A signing certificate does not automatically grant system entitlements. No restricted entitlements are fabricated. Failure and timeout details are the point of this first build.
+In Daybreak, allow Calendar access and configure preparation time, calendar and fallback. Enable **Allow daily calendar URL to apply without asking**. Then create a Time of Day personal automation in Shortcuts, choose an evening time and Run Immediately, and add **Open URLs** with:
 
-## Install and test
-
-Download `Daybreak.ipa` from the latest GitHub release and sign/install using FlareStore or EmberSign with your existing certificate. No certificate or Apple ID is stored in this repository.
-
-1. Open Daybreak and tap **Inspect Sleep alarm access**.
-2. Try **Test Siri shortcut support**. If an actual action can be saved, run it yourself and check that Clock's Sleep entry changes, rather than a separate regular alarm.
-3. If a future next-only override was returned, select a future time on that alarm's date and use **Apply to next-only override**. If needed, establish an override once with Siri first, then inspect again.
-4. Check Clock's visible Sleep | Wake Up entry. Use **Restore saved override** to restore the matching, still-future snapshot, or set the desired time in Clock/Siri.
-5. Share the diagnostic report using the top-right share button. The log is also available through Files sharing. It records OS/interface/error and alarm timing details, but never reads calendar events, credentials or pairing records.
-
-The first probe will not request a change on launch. No regular alarm is created as a hidden fallback. An error-free callback alone is not presented as success.
-
-## Builds and downloads
-
-Every main push builds a device IPA on a macOS GitHub runner, validates its structure, compiles a Simulator build and smoke-tests a read-only inspection. The release step runs only after these checks pass. The build is ad-hoc signed as a packaging aid; it **must be re-signed** to install on an iPhone. Release versions and build numbers increase with `GITHUB_RUN_NUMBER`.
-
-`repo.json` is a FlareStore/AltStore-style source feed. This repository is private, so its raw feed and release downloads require GitHub authentication; a sideloader without private GitHub authentication cannot fetch them anonymously. Browser download while signed in, followed by importing the IPA, is the supported first-build path. Repository visibility is not changed by the workflow.
-
-For local builds on a Mac with Xcode command-line tools:
-
-```sh
-bash scripts/build.sh
-bash scripts/build.sh simulator
-python3 scripts/smoke.py
+```
+daybreak://calendar-run
 ```
 
-No third-party build dependencies are required. Minimum deployment target is iOS 17; the intended test device is iOS 27. Simulator success confirms launch/inspection behavior only, not permission to modify device alarms.
+This is Daybreak's own URL handler; it does not depend on saving Apple's internal Sleep intent as a shortcut. The runner must already be active. Opening the app or invoking Siri may require unlocking. Locked-screen execution is unverified. There is no guarantee that iOS will keep the runner alive overnight.
+
+The URL calculates tomorrow's plan on each invocation, makes at most one automatic attempt per target morning, and skips before-noon invocations, past wake times, and wake times crossing into the previous date. A failed handoff still counts as an attempt; manually Apply after checking Clock to retry. Calendar data stays on the phone and no calendar event is modified.
+
+## Builds
+
+Every main push builds both IPAs, launches the host in Simulator, checks planner arithmetic, and tests the local runner handoff, session rejection, busy rejection and duplicate rejection without invoking Siri. GitHub releases and repo.json update only after checks pass. Re-sign release IPAs before installation. Both apps should use the same release version.
+
+Minimum iOS version is 17. The target phone runs iOS 27. Simulator checks do not prove real-device alarm changes or locked-screen execution.
 
 ## Research sources
 
