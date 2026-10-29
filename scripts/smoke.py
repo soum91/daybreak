@@ -19,6 +19,7 @@ time.sleep(18)
 container = Path(run('xcrun','simctl','get_app_container',udid,'com.soum91.daybreak','data'))
 report = (container/'Documents'/'Daybreak-diagnostic.txt').read_text()
 assert 'App ready.' in report, report
+assert 'DAYBREAK_PLANNER_PASS' in report, report
 assert 'INUpdateAlarmIntent methods:' in report, report
 # Checking a running process catches crashes during private-framework inspection.
 processes = run('xcrun','simctl','spawn',udid,'launchctl','list')

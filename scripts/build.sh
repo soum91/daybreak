@@ -19,7 +19,7 @@ sdk_path="$(xcrun --sdk "$sdk" --show-sdk-path)"
 xcrun --sdk "$sdk" clang -target "$target" -isysroot "$sdk_path" \
   -fobjc-arc -fblocks -O2 -g -Wall -Wextra -Wno-unused-parameter \
   -Wno-deprecated-declarations -IApp \
-  -framework UIKit -framework Foundation -framework Intents -framework IntentsUI \
+  -framework UIKit -framework Foundation -framework Intents -framework IntentsUI -framework EventKit \
   App/main.m App/Probe.m -o "$app/Daybreak"
 APP_PATH="$app" APP_VERSION="$version" BUILD_NUMBER="$build_number" SDK_NAME="$sdk" python3 scripts/info.py
 swift scripts/Icon.swift "$app"

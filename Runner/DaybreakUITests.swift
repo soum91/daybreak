@@ -6,6 +6,9 @@ import UIKit
 /// This is a genuine UI-test runner, not a normal app calling a restricted daemon.
 /// The only mutable operation is a user-approved, strictly formatted Sleep command.
 final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
+    private var executing = false
+    private var blocked = false
+    private var lastSubmission = Date.distantPast
     private var approved: [[String: Any]] = []
     private var offered: [String: [String: Any]] = [:]
     private var listener: NWListener?
@@ -46,6 +49,10 @@ final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
         // No execution loop is entered in this test: no Siri activation or alarm mutation.
         _ = try await URLSession.shared.data(for: request)
         XCTAssertEqual(approved.count, 1, "Duplicate requests must not queue twice")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["hour": 9, "minute": 0, "request": UUID().uuidString])
+        let (_, busyResponse) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((busyResponse as? HTTPURLResponse)?.statusCode, 409, "A different request must not queue while one is pending")
+        XCTAssertEqual(approved.count, 1)
         request.setValue("invalid", forHTTPHeaderField: "X-Daybreak-Session")
         let (_, rejected) = try await URLSession.shared.data(for: request)
         XCTAssertEqual((rejected as? HTTPURLResponse)?.statusCode, 400)
@@ -71,32 +78,35 @@ final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
         log("On-device XCTest runner active. No computer connection is used by this test.")
         while true {
             for raw in DaybreakLaunch.takeRequests() {
+                guard !executing, !blocked, approved.isEmpty, Date().timeIntervalSince(lastSubmission) >= 60 else { log("Ignored URL request while another operation requires attention"); continue }
                 guard let request = raw as? [String: Any], let h = request["hour"] as? Int, let m = request["minute"] as? Int,
                       let id = request["request"] as? String else { continue }
                 offered[id] = request
-                announce("Set next Sleep alarm to \(Self.time(h,m))?", "Long-press and choose Apply Sleep alarm test. This sends the command to Siri, then opens Clock for verification.", category: "sleep-test", identifier: id)
+                announce("Set next Sleep alarm to \(Self.time(h,m))?", "Long-press and choose Apply Sleep alarm test. This sends the command to Siri, leaves Siri visible for clarification. Verify the actual Sleep alarm in Clock.", category: "sleep-test", identifier: id)
                 status = ["phase": "awaiting-approval", "request": id]
                 log("Awaiting device approval for \(Self.time(h,m))")
             }
             if !approved.isEmpty {
                 let request = approved.removeFirst()
                 if let h = request["hour"] as? Int, let m = request["minute"] as? Int {
-                    let command = "Change my next sleep alarm to \(Self.time(h,m))."
+                    executing = true; lastSubmission = Date()
+                    let command = (request["operation"] as? String) == "enable" ? "Turn on my next sleep alarm." : "Change my next sleep alarm to \(Self.time(h,m))."
                     log("Submitting fixed Sleep-only command: \(command)")
                     status = ["phase": "activating-siri", "command": command]
                     let error = DaybreakLaunch.caught { XCUIDevice.shared.siriService.activate(voiceRecognitionText: command) }
                     if let error {
-                        status = ["phase": "failed", "error": error]
+                        blocked = true
+                        status = ["phase": "needs-reset", "error": error, "command": command]
                         log("Siri activation failed: \(error)")
                         announce("Daybreak Siri test failed", error)
                     } else {
                         status = ["phase": "submitted", "command": command, "verified": false]
                         log("Siri activation returned. Alarm change is NOT verified.")
-                        RunLoop.current.run(until: Date().addingTimeInterval(3))
-                        let clockError = DaybreakLaunch.caught { XCUIApplication(bundleIdentifier: "com.apple.mobiletimer").activate() }
-                        if let clockError { log("Clock activation: \(clockError)") }
-                        announce("Check Clock → Sleep | Wake Up", "Siri received the request. Confirm its time before relying on it; return to Daybreak to copy the runner report.")
+                        // Leave Siri visible. Switching apps here could interrupt its dialog.
+                        log("Siri remains visible for any clarification. No automatic retry is performed.")
+                        announce("Check Clock → Sleep | Wake Up", "Siri activation returned; an alarm change is not verified. Confirm the actual time in Clock. If Siri asks which alarm, dismiss it and check Clock before retrying.")
                     }
+                    executing = false
                 }
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
@@ -107,7 +117,7 @@ final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         DispatchQueue.main.async {
             let id = response.notification.request.identifier
-            if let request = self.offered.removeValue(forKey: id), response.actionIdentifier == "apply" { self.approved.append(request) }
+            if let request = self.offered.removeValue(forKey: id), response.actionIdentifier == "apply", !self.executing, !self.blocked, self.approved.isEmpty, Date().timeIntervalSince(self.lastSubmission) >= 60 { self.approved.append(request) }
             completionHandler()
         }
     }
@@ -130,18 +140,30 @@ final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
                 var result = self.status; var code = "200 OK"
                 if lines.first == "GET /status HTTP/1.1" {
                     result["session"] = self.sessionToken
+                    result["busy"] = self.executing || !self.approved.isEmpty
+                    result["cooldownSeconds"] = max(0, 60 - Int(Date().timeIntervalSince(self.lastSubmission)))
+                } else if lines.first == "POST /reset HTTP/1.1",
+                          lines.contains(where: { $0.lowercased() == "x-daybreak-session: \(self.sessionToken.lowercased())" }) {
+                    if self.executing { code = "409 Conflict"; result = ["error": "Siri is still executing. Dismiss it and wait before resetting."] }
+                    else { self.approved.removeAll(); self.offered.removeAll(); self.blocked = false; self.lastSubmission = .distantPast; self.status = ["phase": "ready"]; self.log("User checked Clock and cleared the previous request"); result = self.status }
                 } else if lines.first == "POST /sleep-test HTTP/1.1",
                           lines.contains(where: { $0.lowercased() == "x-daybreak-session: \(self.sessionToken.lowercased())" }),
                           let request = (try? JSONSerialization.jsonObject(with: body.prefix(length))) as? [String: Any],
                           let h = request["hour"] as? Int, (0...23).contains(h),
                           let m = request["minute"] as? Int, (0...59).contains(m),
-                          let id = request["request"] as? String, UUID(uuidString: id) != nil {
-                    if self.accepted.insert(id).inserted {
+                          let id = request["request"] as? String, UUID(uuidString: id) != nil,
+                          ["set", "enable"].contains(request["operation"] as? String ?? "set") {
+                    if self.accepted.contains(id) { result = self.status }
+                    else if self.executing || self.blocked || !self.approved.isEmpty || Date().timeIntervalSince(self.lastSubmission) < 60 {
+                        code = "409 Conflict"
+                        result = ["error": "Previous Siri request is active, cooling down, or needs reset. Check Clock and clear it before retrying."]
+                    } else {
+                        self.accepted.insert(id)
                         self.approved.append(request)
                         self.status = ["phase": "queued", "request": id]
-                        self.log("Received host-confirmed Sleep test for \(Self.time(h,m))")
+                        self.log("Received host-confirmed \(request["operation"] as? String ?? "set") Sleep test; selected time \(Self.time(h,m))")
                     }
-                    result = self.status
+                    if code == "200 OK" { result = self.status }
                 } else { code = "400 Bad Request"; result = ["error": "Invalid endpoint, session or Sleep request"] }
                 result["log"] = self.history
                 let json = (try? JSONSerialization.data(withJSONObject: result)) ?? Data("{}".utf8)

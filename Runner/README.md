@@ -38,3 +38,13 @@ Calendar-based scheduling, automatic authorization and locked-screen execution a
 ## Confirmed host handoff
 
 The main test button now confirms the selected time in Daybreak and sends a fixed, session-bound Sleep test to the runner over IPv4 loopback. It no longer depends on URL capture or notification actions. Start the runner first, return to Daybreak, then confirm Apply with Siri. Both apps must be updated together. The original URL/notification path remains available for diagnostics. A user report confirms runner startup and status access on iOS 27; Siri execution remains unverified. CI exercises the local handoff, duplicate rejection and invalid-session rejection without entering the Siri execution loop.
+
+## Calendar planning and request serialization
+
+Daybreak reads the selected calendar (or all calendars), excludes all-day/cancelled/declined events, and uses the earliest event starting tomorrow before noon minus a configurable 0–720 minute preparation interval. No event uses the saved 08:30 default fallback. Preview and Apply recalculate the plan. Bedtime is unchanged. Full Calendar access is required because EventKit has no read-only permission, but Daybreak only reads events.
+
+For a daily evening run, enable daily URL application and configure a Time of Day personal automation in Shortcuts with Open URLs: `daybreak://calendar-run`. The URL is preview-only unless explicitly enabled. Automatic runs before noon or with a past calculated wake time are rejected to avoid targeting today’s alarm. The host records at most one automatic attempt per target morning, including failed handoffs, so missed runs require a manual retry. A running development-signed runner and mounted developer image are required. Lock-screen execution is not verified and opening the app or invoking Siri may require unlock. There is no background timer or claim that iOS will launch this app autonomously.
+
+The runner rejects new requests while queued/executing, for 60 seconds after submission, and after an activation exception until explicitly reset. It never automatically retries Siri, and no longer switches to Clock after three seconds. Dismiss any ambiguous Siri dialog and inspect the actual Sleep entry. “I checked Clock / clear previous request” resets only while no activation is in progress; it does not restore an alarm. CI tests queue/busy/session handling without invoking Siri, and the host smoke check exercises the calendar arithmetic.
+
+The separate Enable next Sleep alarm button sends only “Turn on my next sleep alarm.” through the same runner gate. This enable command is unverified on the phone. It is never silently appended to a time-change request.

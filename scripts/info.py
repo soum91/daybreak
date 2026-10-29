@@ -15,6 +15,8 @@ info = {
     'UISupportedInterfaceOrientations~ipad': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
     'LSApplicationQueriesSchemes': ['clock-alarm', 'daybreak-runner'],
     'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True},
+    'NSCalendarsFullAccessUsageDescription': 'Read tomorrow’s events to calculate your wake-up time. Daybreak does not change calendar events.',
+    'CFBundleURLTypes': [{'CFBundleURLName': 'Daybreak calendar', 'CFBundleURLSchemes': ['daybreak']}],
     'NSSiriUsageDescription': 'Test whether a Sleep alarm update can be saved as a Siri shortcut.',
     'CFBundleIcons': {'CFBundlePrimaryIcon': {'CFBundleIconFiles': ['AppIcon60x60'], 'UIPrerenderedIcon': False}},
     'CFBundleIcons~ipad': {'CFBundlePrimaryIcon': {'CFBundleIconFiles': ['AppIcon60x60', 'AppIcon76x76'], 'UIPrerenderedIcon': False}},
