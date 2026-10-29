@@ -1,0 +1,33 @@
+{
+  "name": "Daybreak",
+  "identifier": "com.soum91.daybreak.source",
+  "subtitle": "Calendar-aware mornings, starting with a Sleep alarm diagnostic",
+  "website": "https://github.com/soum91/daybreak",
+  "apps": [
+    {
+      "name": "Daybreak",
+      "bundleIdentifier": "com.soum91.daybreak",
+      "developerName": "soum91",
+      "version": "0.1.3",
+      "buildVersion": "3",
+      "versionDate": "2026-10-29T05:49:48Z",
+      "versionDescription": "Experimental Sleep alarm access and Siri shortcut diagnostic. Calendar automation is not implemented yet.",
+      "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
+      "iconURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.png",
+      "localizedDescription": "Inspect actual Sleep alarm access and test a next-only update. Private repository downloads require GitHub authentication.",
+      "size": 138369,
+      "minOSVersion": "17.0",
+      "versions": [
+        {
+          "version": "0.1.3",
+          "buildVersion": "3",
+          "date": "2026-10-29T05:49:48Z",
+          "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
+          "size": 138369,
+          "minOSVersion": "17.0"
+        }
+      ]
+    }
+  ],
+  "news": []
+}
