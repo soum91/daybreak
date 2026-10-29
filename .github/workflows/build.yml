@@ -57,9 +57,9 @@ jobs:
           cat > dist/release-notes.md <<'NOTES'
           Experimental on-device Siri runner test. Calendar automation is not implemented yet.
 
-          Install Daybreak.ipa normally. DaybreakRunner.ipa needs DEVELOPMENT signing (free Apple ID is sufficient), including its nested .xctest bundle. A distribution certificate is insufficient. Mount the developer image with your existing on-device developer tool, open Daybreak Runner and approve UI Automation and Notifications. In Daybreak choose a wake time, send the on-device runner test and approve its notification. Verify the exact Sleep | Wake Up entry in Clock, then read/share the runner report.
+          Install Daybreak.ipa normally. DaybreakRunner.ipa needs DEVELOPMENT signing (free Apple ID is sufficient), including its nested .xctest bundle. A distribution certificate is insufficient. Mount the developer image with your existing on-device developer tool, open Daybreak Runner and approve UI Automation and Notifications. In Daybreak choose a wake time, send the on-device runner test and confirm Apply with Siri inside Daybreak. Verify the exact Sleep | Wake Up entry in Clock, then read/share the runner report.
 
-          CI validates the host IPA and launch, builds the runner, and runs a read-only Siri API test. CI never changes an alarm. Actual runner startup, signing and Siri execution on iOS 27 remain unverified until tested on the phone. See Runner/README.md for requirements.
+          CI validates the host IPA and launch, builds the runner, and tests local request delivery, duplicate rejection, session validation and Siri API presence without invoking Siri. CI never changes an alarm. A user report confirms runner startup and local status on iOS 27. Siri execution and the resulting alarm change still require phone verification. See Runner/README.md for requirements.
           NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber

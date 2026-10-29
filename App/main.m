@@ -47,7 +47,7 @@
     sun.contentMode=UIViewContentModeScaleAspectFit; sun.tintColor=UIColor.systemOrangeColor; [sun.heightAnchor constraintEqualToConstant:48].active=YES;
     [stack addArrangedSubview:sun];
     [stack addArrangedSubview:[self label:@"A better morning starts here." size:28 weight:UIFontWeightBold]];
-    UILabel *intro=[self label:@"Sleep alarm diagnostic · 0.1\nTest the real Clock Sleep | Wake Up alarm before adding calendar automation." size:15 weight:UIFontWeightRegular];
+    UILabel *intro=[self label:[NSString stringWithFormat:@"Sleep alarm diagnostic · %@\nTest the real Clock Sleep | Wake Up alarm before adding calendar automation.", NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"unknown"] size:15 weight:UIFontWeightRegular];
     intro.textColor=UIColor.secondaryLabelColor; [stack addArrangedSubview:intro];
     self.statusLabel=[self label:@"Ready to inspect" size:17 weight:UIFontWeightSemibold];
     self.statusLabel.accessibilityIdentifier=@"probeStatus"; [stack addArrangedSubview:self.statusLabel];
@@ -58,7 +58,7 @@
     [self.picker.heightAnchor constraintEqualToConstant:130].active=YES; [stack addArrangedSubview:self.picker];
     [stack addArrangedSubview:[self button:@"Start on-device Siri runner test" action:@selector(runOnDevice) primary:YES]];
     [stack addArrangedSubview:[self button:@"Read runner status / report" action:@selector(readRunner) primary:NO]];
-    UILabel *runnerHelp=[self label:@"Install DaybreakRunner separately with development signing, mount the developer image with your on-device developer tool, and allow its UI Automation and Notifications prompts. Long-press the test notification to approve. This route uses no computer during operation. Alarm changes still need verification in Clock." size:13 weight:UIFontWeightRegular];
+    UILabel *runnerHelp=[self label:@"Start Daybreak Runner first. Once its status is ready, choose a time here, tap Start and confirm Apply with Siri. No notification approval is needed for this button. Runner requires development signing and a mounted developer image. Verify the actual Sleep alarm in Clock." size:13 weight:UIFontWeightRegular];
     runnerHelp.textColor=UIColor.secondaryLabelColor; [stack addArrangedSubview:runnerHelp];
     self.siriButton=[self button:@"2. Test Siri shortcut support" action:@selector(siri) primary:NO]; [stack addArrangedSubview:self.siriButton];
     self.writeButton=[self button:@"3. Apply to next-only override" action:@selector(confirmWrite) primary:NO]; [stack addArrangedSubview:self.writeButton];
@@ -88,16 +88,43 @@
 - (void)scan { [self.probe scan]; }
 - (void)runOnDevice {
     NSDateComponents *time=[NSCalendar.currentCalendar components:NSCalendarUnitHour|NSCalendarUnitMinute fromDate:self.picker.date];
-    NSString *link=[NSString stringWithFormat:@"daybreak-runner://sleep?hour=%ld&minute=%ld&request=%@",(long)time.hour,(long)time.minute,NSUUID.UUID.UUIDString];
-    [UIApplication.sharedApplication openURL:[NSURL URLWithString:link] options:@{} completionHandler:^(BOOL opened){
-        [self.probe note:opened?@"Daybreak Runner launch URL accepted. Approve its Sleep test notification; this does not yet prove Siri or the alarm changed.":@"DaybreakRunner is not installed or its URL scheme is unavailable. It must be development-signed, including its nested .xctest bundle."];
-    }];
+    NSString *message=[NSString stringWithFormat:@"Ask Siri to change your next Sleep alarm to %ld:%02ld %@? Check Clock afterward to verify the result.",(long)(time.hour%12?:12),(long)time.minute,time.hour<12?@"AM":@"PM"];
+    UIAlertController *alert=[UIAlertController alertControllerWithTitle:@"Test next Sleep alarm" message:message preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Apply with Siri" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){[self sendRunnerHour:time.hour minute:time.minute];}]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+- (void)sendRunnerHour:(NSInteger)hour minute:(NSInteger)minute {
+    NSURLSessionConfiguration *config=NSURLSessionConfiguration.ephemeralSessionConfiguration; config.timeoutIntervalForRequest=5;
+    NSURLSession *session=[NSURLSession sessionWithConfiguration:config];
+    self.statusLabel.text=@"Connecting to runner…";
+    [[session dataTaskWithURL:[NSURL URLWithString:@"http://127.0.0.1:8275/status"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+        NSDictionary *info=data?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
+        NSString *token=[info isKindOfClass:NSDictionary.class]?info[@"session"]:nil;
+        if(!token.length){
+            dispatch_async(dispatch_get_main_queue(),^{
+                [self.probe note:@"Runner not reachable or needs updating. Opening Runner. Once it starts, return here and tap Start again. Install both apps from the same release."];
+                [UIApplication.sharedApplication openURL:[NSURL URLWithString:@"daybreak-runner://start"] options:@{} completionHandler:nil];
+            }); [session finishTasksAndInvalidate]; return;
+        }
+        NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://127.0.0.1:8275/sleep-test"]];
+        request.HTTPMethod=@"POST"; [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"]; [request setValue:token forHTTPHeaderField:@"X-Daybreak-Session"];
+        request.HTTPBody=[NSJSONSerialization dataWithJSONObject:@{@"hour":@(hour),@"minute":@(minute),@"request":NSUUID.UUID.UUIDString} options:0 error:nil];
+        [[session dataTaskWithRequest:request completionHandler:^(NSData *reply,NSURLResponse *r,NSError *failure){
+            dispatch_async(dispatch_get_main_queue(),^{
+                BOOL ok=!failure && [(NSHTTPURLResponse *)r statusCode]==200;
+                [self.probe note:ok?@"Runner accepted the confirmed test. Siri should open shortly. Alarm change is not yet verified.":[NSString stringWithFormat:@"Runner handoff failed: %@",failure.localizedDescription?:@"request rejected"]];
+                self.statusLabel.text=ok?@"Runner: test queued":@"Runner: handoff failed";
+                if(ok) dispatch_after(dispatch_time(DISPATCH_TIME_NOW,8*NSEC_PER_SEC),dispatch_get_main_queue(),^{[self readRunner];});
+            }); [session finishTasksAndInvalidate];
+        }] resume];
+    }] resume];
 }
 - (void)readRunner {
     NSURLSessionConfiguration *configuration=NSURLSessionConfiguration.ephemeralSessionConfiguration;
     configuration.timeoutIntervalForRequest=5;
     NSURLSession *session=[NSURLSession sessionWithConfiguration:configuration];
-    [[session dataTaskWithURL:[NSURL URLWithString:@"http://localhost:8275/status"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+    [[session dataTaskWithURL:[NSURL URLWithString:@"http://127.0.0.1:8275/status"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
         dispatch_async(dispatch_get_main_queue(),^{
             if(error || !data){[self.probe note:[NSString stringWithFormat:@"Runner status unavailable: %@. If the runner exited immediately, check development signing, nested test signature, mounted developer image, and UI Automation approval.",error.localizedDescription?:@"no data"]];}
             else {

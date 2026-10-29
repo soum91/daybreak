@@ -34,3 +34,7 @@ Calendar-based scheduling, automatic authorization and locked-screen execution a
 - https://github.com/OpenMinis/iCTRL
 - https://developer.apple.com/documentation/xcuiautomation/xcuisiriservice
 - https://appium.github.io/appium-xcuitest-driver/latest/guides/run-preinstalled-wda/
+
+## Confirmed host handoff
+
+The main test button now confirms the selected time in Daybreak and sends a fixed, session-bound Sleep test to the runner over IPv4 loopback. It no longer depends on URL capture or notification actions. Start the runner first, return to Daybreak, then confirm Apply with Siri. Both apps must be updated together. The original URL/notification path remains available for diagnostics. A user report confirms runner startup and status access on iOS 27; Siri execution remains unverified. CI exercises the local handoff, duplicate rejection and invalid-session rejection without entering the Siri execution loop.
