@@ -1,0 +1,62 @@
+name: Build Daybreak IPA
+on:
+  push:
+    branches: [main]
+    paths-ignore: [repo.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: daybreak-main
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build device IPA
+        run: bash scripts/build.sh
+      - name: Build Simulator
+        run: bash scripts/build.sh simulator
+      - name: Launch and inspect in Simulator
+        run: python3 scripts/smoke.py
+      - name: Prepare release and source feed
+        run: |
+          cp build/device/Payload/Daybreak.app/AppIcon1024.png dist/Daybreak.png
+          python3 scripts/feed.py
+      - name: Upload IPA and diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Daybreak-${{ github.run_number }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish private GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v0.1.${BUILD_NUMBER}"
+          cat > dist/release-notes.md <<'NOTES'
+          Sleep alarm diagnostic. Calendar automation is not implemented yet.
+
+          Sign Daybreak.ipa with FlareStore or EmberSign, install, then tap Inspect Sleep alarm access. Test Siri shortcut support. Apply to next-only override is available only if the app can read an existing future override. Share the report and verify any change in Clock.
+
+          Device IPA structure and Simulator launch/read-only inspection passed in CI. Actual iOS 27 alarm access remains unverified until tested on the phone.
+          NOTES
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/Daybreak.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber
+          else
+            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · Sleep alarm diagnostic" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
+          fi
+      - name: Update sideloader source version
+        run: |
+          cp dist/repo.json repo.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add repo.json
+          git diff --cached --quiet || git commit -m "Update Daybreak source to build ${BUILD_NUMBER}"
+          git push origin HEAD:main
