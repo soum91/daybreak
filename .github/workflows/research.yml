@@ -1,0 +1,22 @@
+name: Inspect Siri target interfaces
+on:
+  push:
+    branches: [research/siri-target]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect host Intents interfaces without execution
+        run: |
+          mkdir -p dist
+          xcrun clang -fobjc-arc -fblocks -Wno-deprecated-declarations -framework Foundation -framework Intents research/IntentProbe.m -o dist/IntentProbe
+          dist/IntentProbe 2>&1 | tee dist/intent-interfaces.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: intent-interfaces
+          path: dist/intent-interfaces.txt
