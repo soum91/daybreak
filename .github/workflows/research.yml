@@ -8,7 +8,7 @@ permissions:
 jobs:
   inspect:
     runs-on: macos-15
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Inspect host Intents interfaces without execution
@@ -16,7 +16,15 @@ jobs:
           mkdir -p dist
           xcrun clang -fobjc-arc -fblocks -Wno-deprecated-declarations -framework Foundation -framework Intents research/IntentProbe.m -o dist/IntentProbe
           dist/IntentProbe 2>&1 | tee dist/intent-interfaces.txt
+      - name: Inspect iOS Simulator shortcut eligibility independently
+        run: |
+          sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+          arch="$(uname -m)"
+          xcrun --sdk iphonesimulator clang -target "${arch}-apple-ios17.0-simulator" -isysroot "$sdk" -fobjc-arc -fblocks -framework Foundation -framework Intents research/IntentProbe.m -o dist/IntentProbe-iOS
+          codesign -s - dist/IntentProbe-iOS
+          python3 research/simulator.py
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: intent-interfaces
-          path: dist/intent-interfaces.txt
+          path: dist/*interfaces*.txt

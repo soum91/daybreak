@@ -37,6 +37,10 @@ int main(void) {
             INShortcut *shortcut=[[INShortcut alloc] initWithIntent:intent];
             NSLog(@"INShortcut accepted: %@",shortcut?@"YES":@"NO");
             NSLog(@"Codable: %@",((id(*)(id,SEL))objc_msgSend)(intent,NSSelectorFromString(@"_codableDescription")));
+            // Separately test a Siri-resolved label search, still without executing it.
+            id search=((id(*)(id,SEL,long long,id,id,id,long long,id,long long,id))objc_msgSend)([NSClassFromString(@"INAlarmSearch") alloc],NSSelectorFromString(@"initWithAlarmReferenceType:identifier:time:label:alarmSearchStatus:includeSleepAlarm:period:isMeridianInferred:"),0LL,nil,nil,[[INSpeakableString alloc] initWithSpokenPhrase:@"Sleep"],0LL,@YES,0LL,nil);
+            id searchIntent=((id(*)(id,SEL,id,id,long long,id,id))objc_msgSend)([NSClassFromString(@"INUpdateAlarmIntent") alloc],NSSelectorFromString(@"initWithAlarmSearch:alarm:operation:proposedTime:proposedLabel:"),search,nil,2LL,range,nil);
+            NSLog(@"Siri-resolved Sleep search INShortcut accepted: %@",[[INShortcut alloc] initWithIntent:searchIntent]?@"YES":@"NO");
         } @catch(NSException *e) { NSLog(@"Construction exception %@: %@",e.name,e.reason); }
     } return 0;
 }
