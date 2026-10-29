@@ -3,6 +3,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 #import <dlfcn.h>
+#include <string.h>
 
 // These are observed runtime interfaces, not linked private SDK declarations.
 // Every call checks availability; changed signatures fail closed.
@@ -40,6 +41,13 @@ static id ObjectCall(id o, NSString *name, id arg) {
         [sig getArgumentTypeAtIndex:2][0]!='@') return nil;
     return ((id(*)(id,SEL,id))objc_msgSend)(o,s,arg);
 }
+static BOOL HasInitializer(id object, SEL selector, const char *arguments) {
+    NSMethodSignature *sig=[object methodSignatureForSelector:selector];
+    size_t count=strlen(arguments);
+    if(!sig || sig.numberOfArguments!=count+2 || sig.methodReturnType[0]!='@') return NO;
+    for(size_t i=0;i<count;i++) if([sig getArgumentTypeAtIndex:i+2][0]!=arguments[i]) return NO;
+    return YES;
+}
 static NSString *Methods(Class cls) {
     if (!cls) return @"unavailable";
     NSMutableArray *names=[NSMutableArray array];
@@ -62,10 +70,7 @@ static NSString *Methods(Class cls) {
 @property(nonatomic) id manager;
 @property(nonatomic) id alarm;
 @property(nonatomic) id original;
-@property(nonatomic) BOOL lastWritePending;
-@property(nonatomic) BOOL expectedEnabled;
-@property(nonatomic) NSUInteger expectedHour;
-@property(nonatomic) NSUInteger expectedMinute;
+- (void)applyFreshOverrideTo:(NSDate *)date;
 @end
 
 @implementation Probe
@@ -130,6 +135,7 @@ static NSString *Methods(Class cls) {
     id result=Get(self.manager,@"sleepAlarms");
     if(!result) { completion(nil,[NSError errorWithDomain:@"Daybreak" code:3 userInfo:@{NSLocalizedDescriptionKey:@"sleepAlarms returned no asynchronous result."}]); return; }
     [self observeFuture:result completion:^(id value,NSError *error){
+        @try {
         if(error) { completion(nil,error); return; }
         if(![value isKindOfClass:NSArray.class]) {
             completion(nil,[NSError errorWithDomain:@"Daybreak" code:4 userInfo:@{NSLocalizedDescriptionKey:@"Unexpected alarm collection type."}]); return;
@@ -146,6 +152,9 @@ static NSString *Methods(Class cls) {
         }
         [self note:[NSString stringWithFormat:@"Sleep alarm collection: %lu entries; selected next future alarm: %@",(unsigned long)[value count],chosen?@"yes":@"no"]];
         completion(chosen,nil);
+        } @catch(NSException *exception) {
+            completion(nil,[NSError errorWithDomain:@"Daybreak.Runtime" code:5 userInfo:@{NSLocalizedDescriptionKey:exception.reason?:@"Unexpected alarm result interface"}]);
+        }
     }];
 }
 - (void)scan {
@@ -197,23 +206,40 @@ static NSString *Methods(Class cls) {
 }
 - (void)changeOverrideTo:(NSDate *)date {
     if(self.busy) return;
+    id expectedID=Get(self.alarm,@"alarmID");
+    if(!self.hasOverride || !expectedID) { [self note:@"No exact next-only override selected."]; return; }
+    self.busy=YES; [self state:@"Rechecking next-only override…"];
     @try {
-        if(!self.hasOverride){[self note:@"Refused: no verified next-only override. Recurring schedule will not be edited."];return;}
+        [self readAlarm:^(id current,NSError *error) {
+            @try {
+                self.alarm=current;
+                if(error || !self.hasOverride || ![Get(current,@"alarmID") isEqual:expectedID]) {
+                    self.busy=NO; [self note:[NSString stringWithFormat:@"Override changed or re-read failed; no write submitted. %@",error?:@""]];
+                    [self state:@"Inspect again before changing the alarm"]; return;
+                }
+                [self applyFreshOverrideTo:date];
+            } @catch(NSException *e) { self.busy=NO; [self note:e.reason]; [self state:@"Override recheck failed"]; }
+        }];
+    } @catch(NSException *e) { self.busy=NO; [self note:e.reason]; [self state:@"Override recheck failed"]; }
+}
+- (void)applyFreshOverrideTo:(NSDate *)date {
+    @try {
+        if(!self.hasOverride){self.busy=NO;[self note:@"Refused: no verified next-only override. Recurring schedule will not be edited."];return;}
         NSDate *fire=Get(self.alarm,@"nextFireDate");
         NSDateComponents *time=[NSCalendar.currentCalendar components:NSCalendarUnitHour|NSCalendarUnitMinute fromDate:date];
         NSDate *target=[NSCalendar.currentCalendar dateBySettingHour:time.hour minute:time.minute second:0 ofDate:fire options:0];
-        if(!target || target.timeIntervalSinceNow<60){[self state:@"Choose a future time on the next alarm’s date"];return;}
-        if(!self.original) {
+        if(!target || target.timeIntervalSinceNow<60){self.busy=NO;[self state:@"Choose a future time on the next alarm’s date"];return;}
+        if(!self.original || ![Get(self.original,@"alarmID") isEqual:Get(self.alarm,@"alarmID")]) {
             self.original=[self.alarm copy];
             NSError *error=nil;
             NSData *data=[NSKeyedArchiver archivedDataWithRootObject:self.original requiringSecureCoding:NO error:&error];
             if(!data || ![data writeToURL:self.backupURL options:NSDataWritingAtomic error:&error]) {
-                self.original=nil; [self note:[NSString stringWithFormat:@"Cannot save restore snapshot: %@",error]]; return;
+                self.original=nil; self.busy=NO; [self note:[NSString stringWithFormat:@"Cannot save restore snapshot: %@",error]]; return;
             }
         }
         id candidate=[self.alarm mutableCopy];
         if(!SetNumber(candidate,@"setHour:",time.hour) || !SetNumber(candidate,@"setMinute:",time.minute) || !SetNumber(candidate,@"setEnabled:",YES)) {
-            [self note:@"Required setter signature unavailable; no update submitted."];return;
+            self.busy=NO; [self note:@"Required setter signature unavailable; no update submitted."];return;
         }
         [self writeAlarm:candidate expectedHour:time.hour minute:time.minute enabled:YES];
     } @catch(NSException *e){self.busy=NO; [self note:[NSString stringWithFormat:@"Update exception: %@ %@",e.name,e.reason]]; [self state:@"Update exception; inspect Clock"];} 
@@ -264,17 +290,17 @@ static NSString *Methods(Class cls) {
         id attrClass=NSClassFromString(@"INSleepAlarmAttribute");
         SEL attrInit=NSSelectorFromString(@"initWithBedtime:override:");
         id attr=[attrClass alloc];
-        if(![attr respondsToSelector:attrInit]){[self note:@"Sleep override attribute interface unavailable."];return nil;}
+        if(!HasInitializer(attr,attrInit,"@@")){[self note:@"Sleep override attribute interface unavailable or changed."];return nil;}
         attr=((id(*)(id,SEL,id,id))objc_msgSend)(attr,attrInit,nil,@YES);
         id model=[NSClassFromString(@"INAlarm") alloc];
         SEL modelInit=NSSelectorFromString(@"initWithIdentifier:dateTime:label:enabled:firing:alarmRepeatScheduleOptions:sleepAlarmAttribute:");
-        if(![model respondsToSelector:modelInit]){[self note:@"INAlarm initializer unavailable."];return nil;}
+        if(!HasInitializer(model,modelInit,"@@@@@Q@")){[self note:@"INAlarm initializer unavailable or changed."];return nil;}
         NSString *identifier=Get(self.alarm,@"alarmIDString")?:[Get(self.alarm,@"alarmID") UUIDString];
         if(!identifier.length){[self note:@"Actual Sleep alarm has no identifier; refusing broad matching."];return nil;}
         model=((id(*)(id,SEL,id,id,id,id,id,unsigned long long,id))objc_msgSend)(model,modelInit,identifier,nil,[[INSpeakableString alloc] initWithSpokenPhrase:@"Sleep | Wake Up"],@YES,@NO,0,attr);
         id intent=[cls alloc];
         SEL init=NSSelectorFromString(@"initWithAlarmSearch:alarm:operation:proposedTime:proposedLabel:");
-        if(![intent respondsToSelector:init]){[self note:@"Update intent initializer unavailable."];return nil;}
+        if(!HasInitializer(intent,init,"@@q@@")){[self note:@"Update intent initializer unavailable or changed."];return nil;}
         intent=((id(*)(id,SEL,id,id,long long,id,id))objc_msgSend)(intent,init,nil,model,(long long)operation,range,nil);
         if(![intent isKindOfClass:INIntent.class]){[self note:@"No INIntent returned."];return nil;}
         ((INIntent *)intent).suggestedInvocationPhrase=@"Adjust my next sleep alarm";
