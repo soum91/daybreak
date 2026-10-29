@@ -1,29 +1,29 @@
 {
   "name": "Daybreak",
   "identifier": "com.soum91.daybreak.source",
-  "subtitle": "Calendar-aware mornings, starting with a Sleep alarm diagnostic",
+  "subtitle": "Calendar wake planning with an on-device Siri runner",
   "website": "https://github.com/soum91/daybreak",
   "apps": [
     {
       "name": "Daybreak",
       "bundleIdentifier": "com.soum91.daybreak",
       "developerName": "soum91",
-      "version": "0.1.6",
-      "buildVersion": "6",
-      "versionDate": "2026-10-29T10:09:51Z",
-      "versionDescription": "Experimental Sleep alarm access and Siri shortcut diagnostic. Calendar automation is not implemented yet.",
+      "version": "0.1.9",
+      "buildVersion": "9",
+      "versionDate": "2026-10-29T10:36:11Z",
+      "versionDescription": "Calendar-based planning and evening URL trigger included. Locked-screen execution remains unverified.",
       "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
       "iconURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.png",
-      "localizedDescription": "Inspect actual Sleep alarm access and test a next-only update. Private repository downloads require GitHub authentication.",
-      "size": 147919,
+      "localizedDescription": "Plan wake times from tomorrow\u2019s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.",
+      "size": 177089,
       "minOSVersion": "17.0",
       "versions": [
         {
-          "version": "0.1.6",
-          "buildVersion": "6",
-          "date": "2026-10-29T10:09:51Z",
+          "version": "0.1.9",
+          "buildVersion": "9",
+          "date": "2026-10-29T10:36:11Z",
           "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
-          "size": 147919,
+          "size": 177089,
           "minOSVersion": "17.0"
         }
       ]
@@ -32,15 +32,15 @@
       "name": "Daybreak Runner",
       "bundleIdentifier": "com.soum91.daybreak.runner",
       "developerName": "soum91",
-      "version": "0.1.6",
-      "buildVersion": "6",
-      "versionDate": "2026-10-29T10:09:51Z",
+      "version": "0.1.9",
+      "buildVersion": "9",
+      "versionDate": "2026-10-29T10:36:11Z",
       "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/DaybreakRunner.ipa",
       "iconURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.png",
-      "size": 134038,
+      "size": 141016,
       "minOSVersion": "17.0",
-      "localizedDescription": "Experimental on-device Siri runner. Requires DEVELOPMENT signing with get-task-allow, a signed nested .xctest bundle, a mounted developer image and UI Automation approval. Distribution signing is insufficient. No calendar automation yet.",
-      "versionDescription": "On-device-only Sleep alarm test; real-device execution remains unverified."
+      "localizedDescription": "Experimental on-device Siri runner. Requires DEVELOPMENT signing with get-task-allow, a signed nested .xctest bundle, a mounted developer image and UI Automation approval. Distribution signing is insufficient. Calendar planning is configured in Daybreak.",
+      "versionDescription": "Device-tested Siri activation; alarm result and locked-screen reliability require verification."
     }
   ],
   "news": []
