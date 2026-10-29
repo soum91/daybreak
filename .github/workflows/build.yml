@@ -19,14 +19,28 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build device IPA
         run: bash scripts/build.sh
+      - name: Build on-device XCTest runner
+        run: bash scripts/build_runner.sh
       - name: Build Simulator
         run: bash scripts/build.sh simulator
       - name: Launch and inspect in Simulator
         run: python3 scripts/smoke.py
+      - name: Compile and run read-only runner API test
+        run: |
+          device_id=$(xcrun simctl list devices booted --json | python3 -c 'import json,sys; print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["state"]=="Booted"))')
+          xcodebuild test -project Runner/DaybreakRunner.xcodeproj -scheme DaybreakRunner -destination "platform=iOS Simulator,id=$device_id" -derivedDataPath build/runner-simulator -only-testing:DaybreakUITests/DaybreakUITests/testReadOnly CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO > build/runner-test.log 2>&1 || { tail -150 build/runner-test.log; exit 1; }
       - name: Prepare release and source feed
         run: |
           cp build/device/Payload/Daybreak.app/AppIcon1024.png dist/Daybreak.png
           python3 scripts/feed.py
+          shasum -a 256 dist/Daybreak.ipa dist/DaybreakRunner.ipa > dist/SHA256SUMS.txt
+      - name: Collect runner build evidence
+        if: always()
+        run: |
+          mkdir -p dist
+          for log in build/runner-build.log build/runner-test.log; do
+            if [ -f "$log" ]; then cp "$log" dist/; fi
+          done
       - name: Upload IPA and diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -41,16 +55,16 @@ jobs:
         run: |
           tag="v0.1.${BUILD_NUMBER}"
           cat > dist/release-notes.md <<'NOTES'
-          Sleep alarm diagnostic. Calendar automation is not implemented yet.
+          Experimental on-device Siri runner test. Calendar automation is not implemented yet.
 
-          Sign Daybreak.ipa with FlareStore or EmberSign, install, then tap Inspect Sleep alarm access. Test Siri shortcut support. Apply to next-only override is available only if the app can read an existing future override. Share the report and verify any change in Clock.
+          Install Daybreak.ipa normally. DaybreakRunner.ipa needs DEVELOPMENT signing (free Apple ID is sufficient), including its nested .xctest bundle. A distribution certificate is insufficient. Mount the developer image with your existing on-device developer tool, open Daybreak Runner and approve UI Automation and Notifications. In Daybreak choose a wake time, send the on-device runner test and approve its notification. Verify the exact Sleep | Wake Up entry in Clock, then read/share the runner report.
 
-          Device IPA structure and Simulator launch/read-only inspection passed in CI. Actual iOS 27 alarm access remains unverified until tested on the phone.
+          CI validates the host IPA and launch, builds the runner, and runs a read-only Siri API test. CI never changes an alarm. Actual runner startup, signing and Siri execution on iOS 27 remain unverified until tested on the phone. See Runner/README.md for requirements.
           NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/Daybreak.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber
+            gh release upload "$tag" dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber
           else
-            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · Sleep alarm diagnostic" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
+            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · On-device Siri runner test" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
           fi
       - name: Update sideloader source version
         run: |

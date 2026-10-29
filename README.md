@@ -2,6 +2,12 @@
 
 An experimental iPhone diagnostic for the **actual Clock → Sleep | Wake Up alarm**.
 
+## New: on-device Siri runner
+
+The direct MobileTimer route was blocked by the iOS 27 sandbox. A separate **DaybreakRunner.ipa** now tests a different route: a genuine XCTest runner running on the iPhone itself, using Apple's Siri testing service. It uses a mounted developer image and development signing, which can be obtained with a free Apple ID. It does not require a computer during operation. The `.xctest` plug-in must also be signed correctly.
+
+Install/setup instructions and the distinction between building, launching and actually changing an alarm are in [Runner/README.md](Runner/README.md). This remains an on-device test, not proven calendar automation. The legacy diagnostics below are retained for reference; they are not the recommended route on the device that reported a sandbox denial.
+
 ## Current build
 
 This is a feasibility probe, not a finished automatic alarm app. Calendar reading, bedtime changes, Sleep Focus control and unattended scheduling are not implemented yet. Siri changing an alarm manually does not prove a third-party app can do it.

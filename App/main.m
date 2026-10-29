@@ -56,6 +56,10 @@
     self.picker=[UIDatePicker new]; self.picker.datePickerMode=UIDatePickerModeTime; self.picker.preferredDatePickerStyle=UIDatePickerStyleWheels;
     self.picker.date=[NSCalendar.currentCalendar dateBySettingHour:8 minute:30 second:0 ofDate:NSDate.now options:0];
     [self.picker.heightAnchor constraintEqualToConstant:130].active=YES; [stack addArrangedSubview:self.picker];
+    [stack addArrangedSubview:[self button:@"Start on-device Siri runner test" action:@selector(runOnDevice) primary:YES]];
+    [stack addArrangedSubview:[self button:@"Read runner status / report" action:@selector(readRunner) primary:NO]];
+    UILabel *runnerHelp=[self label:@"Install DaybreakRunner separately with development signing, mount the developer image with your on-device developer tool, and allow its UI Automation and Notifications prompts. Long-press the test notification to approve. This route uses no computer during operation. Alarm changes still need verification in Clock." size:13 weight:UIFontWeightRegular];
+    runnerHelp.textColor=UIColor.secondaryLabelColor; [stack addArrangedSubview:runnerHelp];
     self.siriButton=[self button:@"2. Test Siri shortcut support" action:@selector(siri) primary:NO]; [stack addArrangedSubview:self.siriButton];
     self.writeButton=[self button:@"3. Apply to next-only override" action:@selector(confirmWrite) primary:NO]; [stack addArrangedSubview:self.writeButton];
     self.restoreButton=[self button:@"Restore saved override" action:@selector(confirmRestore) primary:NO]; [stack addArrangedSubview:self.restoreButton];
@@ -82,6 +86,31 @@
     if(self.log.text.length) [self.log scrollRangeToVisible:NSMakeRange(self.log.text.length-1,1)];
 }
 - (void)scan { [self.probe scan]; }
+- (void)runOnDevice {
+    NSDateComponents *time=[NSCalendar.currentCalendar components:NSCalendarUnitHour|NSCalendarUnitMinute fromDate:self.picker.date];
+    NSString *link=[NSString stringWithFormat:@"daybreak-runner://sleep?hour=%ld&minute=%ld&request=%@",(long)time.hour,(long)time.minute,NSUUID.UUID.UUIDString];
+    [UIApplication.sharedApplication openURL:[NSURL URLWithString:link] options:@{} completionHandler:^(BOOL opened){
+        [self.probe note:opened?@"Daybreak Runner launch URL accepted. Approve its Sleep test notification; this does not yet prove Siri or the alarm changed.":@"DaybreakRunner is not installed or its URL scheme is unavailable. It must be development-signed, including its nested .xctest bundle."];
+    }];
+}
+- (void)readRunner {
+    NSURLSessionConfiguration *configuration=NSURLSessionConfiguration.ephemeralSessionConfiguration;
+    configuration.timeoutIntervalForRequest=5;
+    NSURLSession *session=[NSURLSession sessionWithConfiguration:configuration];
+    [[session dataTaskWithURL:[NSURL URLWithString:@"http://localhost:8275/status"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+        dispatch_async(dispatch_get_main_queue(),^{
+            if(error || !data){[self.probe note:[NSString stringWithFormat:@"Runner status unavailable: %@. If the runner exited immediately, check development signing, nested test signature, mounted developer image, and UI Automation approval.",error.localizedDescription?:@"no data"]];}
+            else {
+                NSDictionary *result=[NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                if([result isKindOfClass:NSDictionary.class]) {
+                    [self.probe note:[NSString stringWithFormat:@"On-device runner report:\n%@",result]];
+                    self.statusLabel.text=[NSString stringWithFormat:@"Runner: %@",result[@"phase"]?:@"unknown"];
+                } else [self.probe note:@"Runner returned an unexpected status response."];
+            }
+            [session finishTasksAndInvalidate];
+        });
+    }] resume];
+}
 - (void)siri {
     INShortcut *shortcut=[self.probe shortcutForDate:self.picker.date];
     if(!shortcut) {

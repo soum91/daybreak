@@ -1,0 +1,41 @@
+name: DaybreakRunner
+options:
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+targets:
+  DaybreakHarness:
+    type: application
+    platform: iOS
+    sources: [Host.swift]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soum91.daybreak.harness
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  DaybreakUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [DaybreakUITests.swift, Launch.m, Bridge.h]
+    dependencies:
+      - target: DaybreakHarness
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soum91.daybreak.runner.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_OBJC_BRIDGING_HEADER: Bridge.h
+        TEST_HOST: ""
+schemes:
+  DaybreakRunner:
+    build:
+      targets:
+        DaybreakHarness: all
+        DaybreakUITests: [test]
+    test:
+      targets: [DaybreakUITests]
+      preferredScreenCaptureFormat: screenshots
+      captureScreenshotsAutomatically: false
