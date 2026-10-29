@@ -49,8 +49,8 @@ final class DaybreakUITests: XCTestCase, UNUserNotificationCenterDelegate {
         status = ["phase": "ready", "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "unknown"]
         log("On-device XCTest runner active. No computer connection is used by this test.")
         while true {
-            for request in DaybreakLaunch.takeRequests() {
-                guard let h = request["hour"] as? Int, let m = request["minute"] as? Int,
+            for raw in DaybreakLaunch.takeRequests() {
+                guard let request = raw as? [String: Any], let h = request["hour"] as? Int, let m = request["minute"] as? Int,
                       let id = request["request"] as? String else { continue }
                 offered[id] = request
                 announce("Set next Sleep alarm to \(Self.time(h,m))?", "Long-press and choose Apply Sleep alarm test. This sends the command to Siri, then opens Clock for verification.", category: "sleep-test", identifier: id)

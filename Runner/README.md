@@ -8,7 +8,7 @@ This experiment uses a **real XCTest runner** and Apple's `XCUIDevice.shared.sir
 
 - Developer Mode enabled.
 - **Development signing**, including `get-task-allow`, for the runner. A free Apple ID can supply this. A distribution/enterprise signing profile cannot become a development profile just by adding an entitlement.
-- The nested `PlugIns/DaybreakUITests.xctest` must also be signed, from the inside out, using a compatible identity. Its bundle ID must match the runner's installed ID. Use a signer that explicitly handles test bundles. The latest SideStore is documented by iCTRL as supporting this; EmberSign's underlying Zsign handling must be checked before recommending it.
+- The nested `PlugIns/DaybreakUITests.xctest` must also be signed, from the inside out, using a compatible identity. Its bundle ID must match the runner's installed ID. EmberSign's pinned Zsign engine (`c4ba9da4283031c07efa03bce42c4b8602d22e73`, `src/bundle.cpp`) explicitly enumerates `.xctest` bundles and signs deepest bundles first. Use **Provision with Apple Account** and **Prepare for JIT** (to validate the development profile and preserve debugger permission), and keep the bundle identifier unchanged. This source check is not a real-device signing test. The latest SideStore is another documented signing route.
 - A compatible developer image already mounted on the phone, using the existing pairing file, LocalDevVPN and an on-device tool such as StikDebug/EmberSign. Mounting and the runner's signing remain separate requirements. Mount again after reboot.
 - Accept the system's UI Automation/passcode prompt and the runner's Notifications prompt.
 

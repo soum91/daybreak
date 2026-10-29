@@ -63,6 +63,13 @@ static void SetDelegate(id self,SEL s,id delegate) {
     pending=[NSMutableArray new]; seen=[NSMutableSet new]; requestLock=[NSLock new];
     Method delegate=class_getInstanceMethod(UIApplication.class,@selector(setDelegate:));
     if(delegate) { setDelegateOriginal=(void(*)(id,SEL,id))method_getImplementation(delegate); method_setImplementation(delegate,(IMP)SetDelegate); }
+    Class appDelegate=NSClassFromString(@"_XCTRunnerAppDelegate");
+    if(appDelegate) {
+        Hook(appDelegate,@selector(application:didFinishLaunchingWithOptions:),NSSelectorFromString(@"db_originalLaunch:options:"),(IMP)Launched,"B@:@@");
+        Hook(appDelegate,@selector(application:openURL:options:),NSSelectorFromString(@"db_originalOpen:url:options:"),(IMP)Opened,"B@:@@@");
+        Hook(appDelegate,@selector(scene:openURLContexts:),NSSelectorFromString(@"db_originalScene:contexts:"),(IMP)SceneOpened,"v@:@@");
+        Hook(appDelegate,@selector(scene:willConnectToSession:options:),NSSelectorFromString(@"db_originalScene:session:options:"),(IMP)SceneConnected,"v@:@@@");
+    }
     for(NSString *name in @[@"_XCTRunnerSceneDelegate",@"XCTRunnerSceneDelegate"]) {
         Class cls=NSClassFromString(name); if(!cls) continue;
         Hook(cls,@selector(scene:openURLContexts:),NSSelectorFromString(@"db_originalScene:contexts:"),(IMP)SceneOpened,"v@:@@");
