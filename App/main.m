@@ -80,7 +80,7 @@ static void CheckWakePlanner(void) {
     sun.contentMode=UIViewContentModeScaleAspectFit; sun.tintColor=UIColor.systemOrangeColor; [sun.heightAnchor constraintEqualToConstant:48].active=YES;
     [stack addArrangedSubview:sun];
     [stack addArrangedSubview:[self label:@"A better morning starts here." size:28 weight:UIFontWeightBold]];
-    UILabel *intro=[self label:[NSString stringWithFormat:@"Sleep alarm diagnostic · %@\nPlan tomorrow’s wake time from your calendar and apply it through the on-device Siri runner.", NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"unknown"] size:15 weight:UIFontWeightRegular];
+    UILabel *intro=[self label:[NSString stringWithFormat:@"Installed version %@ (build %@)\nPlan tomorrow’s wake time from your calendar and apply it through the on-device Siri runner.", NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"Unknown", NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"]?:@"Unknown"] size:15 weight:UIFontWeightRegular];
     intro.textColor=UIColor.secondaryLabelColor; [stack addArrangedSubview:intro];
     self.statusLabel=[self label:@"Ready to inspect" size:17 weight:UIFontWeightSemibold];
     self.statusLabel.accessibilityIdentifier=@"probeStatus"; [stack addArrangedSubview:self.statusLabel];
