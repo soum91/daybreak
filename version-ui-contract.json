@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "name": "iOS app",
+      "evidence": [
+        {
+          "path": "App/main.m",
+          "contains": [
+            "Installed version",
+            "CFBundleShortVersionString",
+            "CFBundleVersion"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "iOS runner helper",
+      "evidence": [
+        {
+          "path": "Runner/Host.swift",
+          "contains": [
+            "Installed version",
+            "CFBundleShortVersionString",
+            "CFBundleVersion"
+          ]
+        }
+      ]
+    }
+  ]
+}

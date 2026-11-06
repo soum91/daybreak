@@ -17,6 +17,15 @@ jobs:
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+      - name: Verify installed version UI contract
+        shell: bash
+        run: |
+          if command -v python3 >/dev/null 2>&1; then
+            python3 "$GITHUB_WORKSPACE/scripts/check_version_ui.py"
+          else
+            python "$GITHUB_WORKSPACE/scripts/check_version_ui.py"
+          fi
+
       - name: Build device IPA
         run: bash scripts/build.sh
       - name: Build on-device XCTest runner
