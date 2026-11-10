@@ -1,0 +1,23 @@
+name: Remove superseded private-attribution package
+on:
+  push:
+    paths:
+      - '.github/workflows/privacy-cleanup.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  remove-superseded-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify replacement and remove old release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release view 'tweak-v0.2.1' >/dev/null
+          if gh release view 'tweak-v0.2.0' >/dev/null 2>&1; then
+            gh release delete 'tweak-v0.2.0' --yes --cleanup-tag
+          fi
