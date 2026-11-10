@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.1.17] - 2026-11-10
+
+## Verified changes since v0.1.15
+
+- Allow hosted Simulator more time to finish app installation ([`5d7df606`](https://github.com/soum91/daybreak/commit/5d7df606a281fccb0484e3af18c79f5a666fcac1); `release-notes/current.md`, `scripts/smoke.py`)
+- Probe MobileTimer SystemGroup directly before inode scan ([`0d9f02fa`](https://github.com/soum91/daybreak/commit/0d9f02fabded7815fd29328a222c9df591d7494b); `App/ClockAccess.m`, `README.md`, `release-notes/current.md`, and 1 more)
+- Update Daybreak source to build 15 ([`303ffbac`](https://github.com/soum91/daybreak/commit/303ffbacc886e3e795ccaa01763352459ec1befc); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.15...v0.1.17)
+
 ## 0.1.17
 
 Added a direct read-only check of the named MobileTimer SystemGroup before inode discovery. The previous version reached Clock's app preferences on a user's iOS 27.0.1 phone but found only default sound/timer settings; it did not locate live alarms.
