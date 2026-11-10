@@ -3,6 +3,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <notify.h>
 #import "../DBPlanner.h"
+#import "../DBDiagnosticExport.h"
 
 static NSString *const DBAppPrefs=@"com.soum91.daybreak.tweak";
 static UIColor *DBBackground(void){return [UIColor colorWithRed:.055 green:.075 blue:.13 alpha:1];}
@@ -245,18 +246,19 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     return [NSString stringWithFormat:@"Daybreak tweak %@ (%@) · iOS %@\n\n%@\n\n%@",version,build,UIDevice.currentDevice.systemVersion,self.status.text?:@"",log];
 }
 - (void)copyReport {
-    NSString *text=[self report];UIPasteboard.generalPasteboard.string=text;
-    BOOL matched=[UIPasteboard.generalPasteboard.string isEqualToString:text];
-    [self alert:matched?@"Copied and verified":@"Copy failed" message:matched?@"Full diagnostic read back from clipboard.":@"Use Share or Save to Files instead."];
+    NSString *failure=nil;
+    BOOL copied=DBDiagnosticCopyToClipboard([self report],&failure);
+    [self alert:copied?@"Copied and verified":@"Copy failed"
+         message:copied?@"Full report read back from clipboard. You can paste it into another app.":failure?:@"Use Share or Save to Files instead."];
 }
 - (void)shareReport {
     UIActivityViewController *activity=[[UIActivityViewController alloc] initWithActivityItems:@[[self report]] applicationActivities:nil];
     [self presentViewController:activity animated:YES completion:nil];
 }
 - (void)saveReport {
-    NSURL *url=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"Daybreak-diagnostic.txt"]];
     NSError *error=nil;
-    if(![[self report] writeToURL:url atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+    NSURL *url=DBDiagnosticWriteExport([self report],&error);
+    if(!url) {
         [self alert:@"Export failed" message:error.localizedDescription?:@"Cannot write diagnostic file."];return;
     }
     UIDocumentPickerViewController *picker=[[UIDocumentPickerViewController alloc] initForExportingURLs:@[url] asCopy:YES];

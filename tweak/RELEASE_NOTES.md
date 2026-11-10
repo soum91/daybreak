@@ -1,4 +1,11 @@
-## Daybreak Dopamine 0.2.4 (Apple Health schedule investigation)
+## Daybreak Dopamine 0.2.5 (diagnostic Copy and export repair)
+
+- Shared the diagnostic Copy and Save logic between the Home Screen app and Settings pane in `DBDiagnosticExport.h`.
+- Copy now verifies the full clipboard content, tries a standard UTF-8 pasteboard item as a fallback, and gives a specific error when verification fails. Copy does **not** write to `/tmp`.
+- Save to Files now writes and verifies a unique `.txt` file in the user cache, then opens the native Files exporter. This avoids relying on `NSTemporaryDirectory()`, which can resolve to an unwritable path in a jailbreak app or the Preferences host.
+- Neither diagnostic path uploads health data. **Physical-device Copy, cross-app paste, and Files export still need verification.** The Health schedule probe remains read-only and the native write/Watch synchronization work remains pending.
+
+## Earlier 0.2.4 changes (Apple Health schedule investigation)
 
 - Added a separate **read-only HealthKit probe dylib** targeted at Apple's Health app on iOS 16.1.1. It checks for the private `HKSleepSchedule` class and `HKObjectType.sleepScheduleType`, then makes a one-sample read query and returns only fixed outcome codes. No schedule times, sleep data, calendar contents, or identifiers are exported.
 - SpringBoard now records `healthProbe` / `healthProbeUpdated` in the Daybreak diagnostic. Open Apple Health, wait ten seconds, then use **Refresh status** in Daybreak. `schedule_found` indicates the Health process could read an `HKSleepSchedule` sample; it **does not** prove an editable schedule or iCloud synchronization.

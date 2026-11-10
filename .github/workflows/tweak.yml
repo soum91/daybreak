@@ -24,6 +24,8 @@ jobs:
           plutil -lint tweak/prefs/Resources/Info.plist tweak/prefs/Resources/Root.plist
           plutil -lint tweak/app/Resources/Info.plist
           plutil -lint tweak/Daybreak.plist tweak/layout/Library/PreferenceLoader/Preferences/Daybreak.plist
+          test -f tweak/DBDiagnosticExport.h
+          ! grep -q 'NSTemporaryDirectory' tweak/app/main.m tweak/prefs/DBRootListController.m
           python3 - <<'PY'
           import plistlib
           from pathlib import Path

@@ -6,7 +6,7 @@ The Sileo package installs **both** a native Daybreak Home Screen control app an
 a Settings → Daybreak pane. Neither needs Siri, XCTest, a development image,
 or a Windows host. The existing iOS 17+ app remains a separate historical target.
 
-**0.2.4 is a read-only diagnostic update, not a working cross-device alarm
+**0.2.5 is a read-only diagnostic update, not a working cross-device alarm
 automation release.** The user requires the *native* Health Sleep schedule to
 change on iPhone 13 and sync to the iPhone 17 and the Watch paired with that
 iPhone. The old MobileTimer override operation affected only one phone and
@@ -33,7 +33,7 @@ wake alarms. No ordinary alarms or AlarmKit alarms are created.
    The existence of a HealthKit sample is not proof that Apple syncs alarms.
 6. Preview tomorrow's calendar-driven wake in the Daybreak app. The prior
    local-only MobileTimer mutation and automatic writes are disabled in
-   0.2.4. Copy, Share, Save to Files and selectable diagnostics remain.
+   0.2.5. Copy, Share, Save to Files and selectable diagnostics remain.
 
 The Health probe is a **device-verification preview**. Query permissions, process
 injection and iCloud schedule propagation have not been verified on the physical
@@ -62,7 +62,7 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
 1. Add `https://raw.githubusercontent.com/soum91/daybreak/main/sileo/` to Sileo
    and install **Daybreak (Dopamine)** after the build has published its index.
    Restart SpringBoard if Sileo does not automatically respring.
-2. Open the **Daybreak Home Screen app**. Verify **0.2.4 (5)**. The Settings
+2. Open the **Daybreak Home Screen app**. Verify **0.2.5 (6)**. The Settings
    pane and app should both display that schedule writes are unavailable.
 3. In the app, grant Calendar access, choose the calendar and tap **Preview
    tomorrow**. The preview should show a calculated time and event count.
@@ -72,6 +72,8 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
    of `schedule_found` only means a private schedule sample was readable. A
    `query_error` or `query_empty` needs investigation and must not be treated
    as proof that the sleep schedule does not exist.
+   Copy should verify the full pasteboard value; Save to Files should use a
+   verified cache file instead of writing to `/tmp`. Both require device testing.
 6. Keep native Sleep alarms unchanged until a safe update mechanism and actual
    iCloud/Watch propagation have been demonstrated.
 
@@ -82,6 +84,6 @@ status plist alongside it. No event titles or calendar contents are uploaded.
 ## Safety / rollback
 
 Uninstall in Sileo to remove the read-only Health probe and Daybreak UI.
-The 0.2.4 package does not edit the base Sleep schedule or any other alarm.
+The 0.2.5 package does not edit the base Sleep schedule or any other alarm.
 Any overrides written by an *earlier* package remain Apple-owned and can be
 reviewed in Clock or Health; uninstalling cannot undo those historic changes.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.5 (2026-11-10)
+
+- Fixed diagnostic export paths in `tweak/app/main.m` and `tweak/prefs/DBRootListController.m` using a shared `DBDiagnosticExport.h` helper.
+- Copy now explicitly verifies full pasteboard read-back and retries using a UTF-8 pasteboard item. Failures show an actionable error instead of silently reporting success.
+- Save to Files uses a unique file under the device's user cache rather than `NSTemporaryDirectory()` and verifies the saved bytes before launching the native Files picker. This targets the observed temporary-directory write problem.
+- Updated package/app/Settings installed version to 0.2.5 (6). Real-device clipboard and Save to Files verification are pending. Health Sleep schedule writes and iPhone/Watch sync remain disabled and unverified.
+
 ## Daybreak Dopamine tweak 0.2.4 (2026-11-10)
 
 - Added `tweak/DBHealthProbe.m` and a Health-app-only injection filter to check private iOS HealthKit `HKSleepSchedule` and `sleepScheduleType` support. The query reads at most one schedule sample and reports only fixed presence/error codes to SpringBoard, with no patient data and no database edits.

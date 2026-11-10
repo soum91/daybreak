@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import "../DBDiagnosticExport.h"
 #import <Foundation/Foundation.h>
 #import <EventKit/EventKit.h>
 #import <CoreFoundation/CoreFoundation.h>
@@ -96,10 +97,10 @@
         message:[report substringFromIndex:MAX((NSInteger)report.length-1400,0)] preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"Copy and verify" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
         (void)action;
-        UIPasteboard.generalPasteboard.string=report;
-        BOOL match=[UIPasteboard.generalPasteboard.string isEqualToString:report];
+        NSString *failure=nil;
+        BOOL match=DBDiagnosticCopyToClipboard(report,&failure);
         [self info:match?@"Copied and verified":@"Clipboard failed"
-              message:match?@"The full diagnostic was read back from the clipboard.":@"Use Share or Save to Files instead."];
+              message:match?@"The full diagnostic was read back from the clipboard.":failure?:@"Use Share or Save to Files instead."];
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"Share" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
         (void)action;
@@ -108,9 +109,9 @@
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"Save to Files" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
         (void)action;
-        NSURL *url=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"Daybreak-diagnostic.txt"]];
         NSError *error=nil;
-        if(![report writeToURL:url atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        NSURL *url=DBDiagnosticWriteExport(report,&error);
+        if(!url) {
             [self info:@"Save failed" message:error.localizedDescription?:@"Cannot create diagnostic file."];return;
         }
         UIDocumentPickerViewController *picker=[[UIDocumentPickerViewController alloc] initForExportingURLs:@[url] asCopy:YES];
