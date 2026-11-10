@@ -3,19 +3,20 @@
 #import <EventKit/EventKit.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <notify.h>
+#import <Preferences/PSListController.h>
 
 // Small PreferenceLoader controller with no Cephei dependency.
-@interface PSListController : UIViewController
-- (NSArray *)loadSpecifiersFromPlistName:(NSString *)name target:(id)target;
-@end
-
 @interface DBRootListController : PSListController
-@property(nonatomic,strong) NSArray *specifiers;
 @end
 
 @implementation DBRootListController
-- (NSArray *)specifiers {
-    if(!_specifiers) _specifiers=[self loadSpecifiersFromPlistName:@"Root" target:self];
+- (NSMutableArray *)specifiers {
+    // Use PSListController's inherited _specifiers ivar. A shadow ivar left
+    // the superclass table data source empty, causing the black Settings page.
+    if(!_specifiers) {
+        NSArray *loaded=[self loadSpecifiersFromPlistName:@"Root" target:self bundle:[NSBundle bundleForClass:self.class]];
+        _specifiers=[loaded mutableCopy]?:[NSMutableArray new];
+    }
     return _specifiers;
 }
 - (void)viewDidLoad {

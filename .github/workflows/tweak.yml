@@ -22,9 +22,23 @@ jobs:
       - name: Validate source and run planner tests
         run: |
           plutil -lint tweak/prefs/Resources/Info.plist tweak/prefs/Resources/Root.plist
+          plutil -lint tweak/app/Resources/Info.plist
           plutil -lint tweak/Daybreak.plist tweak/layout/Library/PreferenceLoader/Preferences/Daybreak.plist
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          fields = dict(line.split(': ', 1) for line in Path('tweak/control').read_text().splitlines() if ': ' in line)
+          for file in ('tweak/app/Resources/Info.plist', 'tweak/prefs/Resources/Info.plist'):
+              info = plistlib.loads(Path(file).read_bytes())
+              assert info['CFBundleShortVersionString'] == fields['Version'], file
+          cells = plistlib.loads(Path('tweak/prefs/Resources/Root.plist').read_bytes())
+          assert len(cells) >= 10 and any(c.get('action') == 'applyNow:' for c in cells)
+          assert 'Soumen' not in fields.get('Maintainer', '')
+          PY
           xcrun clang -fobjc-arc -framework Foundation tweak/DBPlanner.m tests/DaybreakTweakPlannerTests.m -o /tmp/daybreak-planner-tests
           /tmp/daybreak-planner-tests
+      - name: Generate Daybreak Home Screen icons
+        run: swift scripts/Icon.swift tweak/app/Resources
       - name: Prepare Theos and rootless packaging tools
         run: |
           brew install ldid dpkg make
@@ -40,6 +54,8 @@ jobs:
           dpkg-deb --info "$deb"
           dpkg-deb --contents "$deb" | tee "$GITHUB_WORKSPACE/tweak-package-contents.txt"
           test "$(dpkg-deb -f "$deb" Architecture)" = iphoneos-arm64
+          dpkg-deb --contents "$deb" | grep -q '/Applications/Daybreak.app/Daybreak'
+          dpkg-deb --contents "$deb" | grep -q '/PreferenceBundles/DaybreakPrefs.bundle/DaybreakPrefs'
           cp "$deb" "$GITHUB_WORKSPACE/daybreak-tweak.deb"
       - name: Assemble verified Sileo source
         run: |

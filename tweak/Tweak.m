@@ -121,6 +121,22 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     if(!preview && [calendar component:NSCalendarUnitHour fromDate:now]<12) {
         [self report:@"Updates only run after noon, so the next Sleep alarm belongs to tomorrow." code:@"TOO_EARLY"]; return;
     }
+    if(manual && !preview) {
+        id fromApp=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("appPlannedWake"),(__bridge CFStringRef)DBPrefs));
+        id timestamp=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("appPlanTimestamp"),(__bridge CFStringRef)DBPrefs));
+        id plannedMorning=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("appPlanMorning"),(__bridge CFStringRef)DBPrefs));
+        BOOL fresh=[fromApp isKindOfClass:NSDate.class] && [timestamp isKindOfClass:NSDate.class] &&
+            [plannedMorning isKindOfClass:NSDate.class] &&
+            [now timeIntervalSinceDate:timestamp]>=0 && [now timeIntervalSinceDate:timestamp]<60 &&
+            DBIsSameDay(calendar,plannedMorning,tomorrow) && DBIsSameDay(calendar,fromApp,tomorrow) &&
+            [fromApp timeIntervalSinceDate:now]>60;
+        if(fresh) {
+            DBStore(@"appPlanTimestamp",nil); // One-time handoff, never replay a cached app plan.
+            self.busy=YES;
+            [self report:@"Using the companion app's freshly authorized calendar plan (valid for 60 seconds)." code:@"APP_PLAN_READY"];
+            [self applyWake:fromApp morning:tomorrow manual:YES];return;
+        }
+    }
     // Count failures as attempts too: never keep retrying an unclear Sleep write.
     if(!preview && !manual) DBStore(@"lastAttemptMorning",morningKey);
     self.busy=YES;

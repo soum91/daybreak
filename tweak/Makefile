@@ -3,7 +3,7 @@ ARCHS = arm64 arm64e
 TARGET = iphone:clang:latest:16.0
 FINALPACKAGE = 1
 INSTALL_TARGET_PROCESSES = SpringBoard Preferences
-SUBPROJECTS += prefs
+SUBPROJECTS += prefs app
 
 include $(THEOS)/makefiles/common.mk
 

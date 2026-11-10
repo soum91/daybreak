@@ -1,0 +1,8 @@
+#!/bin/sh
+# Register the bundled Home Screen app on Dopamine's rootless bootstrap.
+if [ -x /var/jb/usr/bin/uicache ]; then
+  /var/jb/usr/bin/uicache -p /var/jb/Applications/Daybreak.app || true
+elif command -v uicache >/dev/null 2>&1; then
+  uicache -p /var/jb/Applications/Daybreak.app || true
+fi
+exit 0

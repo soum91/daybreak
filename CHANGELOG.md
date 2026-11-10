@@ -1,5 +1,20 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.2 (2026-11-10)
+
+- Fixed the blank Settings preference controller by inheriting and populating
+  the actual `PSListController` specifier storage. The former declaration
+  shadowed that storage, leaving the preference table empty.
+- Added a native Home Screen app within the existing rootless package, alongside
+  Settings → Daybreak. The app offers Calendar access and selection, wake preview,
+  adjustable preparation/fallback/evening settings, manual Apply, installed
+  version/build, and diagnostic Copy/Share/Save to Files.
+- Added a short-lived one-time calendar-plan handoff from the app to the
+  SpringBoard engine for manual updates, preserving the next-only Sleep override
+  safety checks and requiring fresh alarm read-back.
+- Updated tweak CI to generate Home Screen icons and verify that the `.deb`
+  includes the app and preference bundle. Device behavior awaits testing.
+
 ## [v0.1.20] - 2026-11-10
 
 ## Verified changes since v0.1.19
