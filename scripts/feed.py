@@ -15,7 +15,7 @@ feed = {
         'name': 'Daybreak', 'bundleIdentifier': 'com.soum91.daybreak',
         'developerName': 'soum91', 'version': version, 'buildVersion': str(number),
         'versionDate': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'versionDescription': 'The read-only Clock scan now continues saved inode ranges automatically after one tap. Keep Daybreak open while it scans; alarm mutation is not implemented.',
+        'versionDescription': 'Clock discovery continues beyond the first preferences container, remembers verified Clock paths, and gives container listing a separate time budget. Read-only; keep Daybreak open.',
         'downloadURL': base + 'Daybreak.ipa', 'iconURL': base + 'Daybreak.png',
         'localizedDescription': 'Plan wake times from tomorrow’s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.',
         'size': ipa.stat().st_size if ipa.exists() else 0, 'minOSVersion': '17.0',

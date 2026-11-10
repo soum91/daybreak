@@ -149,7 +149,7 @@ static void CheckWakePlanner(void) {
         if(finished) {
             self.inspectingClock=NO;self.clockAccessButton.enabled=YES;
             UIApplication.sharedApplication.idleTimerDisabled=self.originalIdleTimerDisabled;
-            self.clockAccessStatus.text=[report containsString:@"CLOCK container:"]?@"A Clock container was found. Review the read-only report. No alarm change was made.":@"The full inode range finished without another Clock container. Review the report for limits.";
+            self.clockAccessStatus.text=[report containsString:@"CLOCK container:"]?@"Scan finished. Review all discovered Clock storage and access errors. No alarm change was made.":@"Scan finished. Remembered Clock locations were checked; review the report for discoveries and access limits.";
         } else {
             self.clockAccessStatus.text=range?[NSString stringWithFormat:@"Scanning automatically. %@ Keep Daybreak open; progress is saved.",range]:@"Scanning automatically. Keep Daybreak open; progress is saved.";
         }
