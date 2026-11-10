@@ -8,7 +8,7 @@
 - Added a native Home Screen app within the existing rootless package, alongside
   Settings → Daybreak. The app offers Calendar access and selection, wake preview,
   adjustable preparation/fallback/evening settings, manual Apply, installed
-  version/build, and diagnostic Copy/Share/Save to Files.
+  version/build, and diagnostic Copy/Share/Save to Files with full selectable text.
 - Added a short-lived one-time calendar-plan handoff from the app to the
   SpringBoard engine for manual updates, preserving the next-only Sleep override
   safety checks and requiring fresh alarm read-back.

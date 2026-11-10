@@ -4,7 +4,8 @@
   superclass and its inherited `_specifiers` list, not a shadowed property.
 - Added a native **Daybreak Home Screen app** to the same rootless Sileo package,
   with wake-time preview, configuration, calendar selection, manual Apply,
-  status refresh, and Copy/Share/native Save to Files diagnostics.
+  status refresh, and Copy/Share/native Save to Files diagnostics plus a
+  selectable full-text fallback.
 - Added a one-time, 60-second CFPreferences handoff for the app's authorized
   calendar plan to the SpringBoard tweak. The engine continues to require an
   exact next-only Sleep override and verified MobileTimer read-back.

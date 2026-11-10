@@ -17,6 +17,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 @property(nonatomic) UIStackView *stack;
 @property(nonatomic) UILabel *preview;
 @property(nonatomic) UILabel *status;
+@property(nonatomic) UITextView *details;
 @property(nonatomic) UITextField *leadField;
 @property(nonatomic) UITextField *fallbackHourField;
 @property(nonatomic) UITextField *fallbackMinuteField;
@@ -127,12 +128,18 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     ]]];
     self.status=[self label:@"No diagnostic yet." size:13 bold:NO];
     self.status.textColor=[UIColor colorWithWhite:1 alpha:.78];
+    self.details=[UITextView new];self.details.editable=NO;self.details.selectable=YES;
+    self.details.textColor=UIColor.whiteColor;self.details.backgroundColor=[UIColor colorWithWhite:0 alpha:.18];
+    self.details.font=[UIFont monospacedSystemFontOfSize:12 weight:UIFontWeightRegular];
+    self.details.layer.cornerRadius=10;
+    [self.details.heightAnchor constraintEqualToConstant:180].active=YES;
     [self.stack addArrangedSubview:[self card:@[
         [self label:@"Tweak status" size:21 bold:YES],self.status,
         [self button:@"Refresh status" action:@selector(refreshStatus) emphasized:NO],
         [self button:@"Copy diagnostic" action:@selector(copyReport) emphasized:NO],
         [self button:@"Share diagnostic" action:@selector(shareReport) emphasized:NO],
-        [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO]
+        [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO],
+        [self label:@"Full selectable report" size:15 bold:YES],self.details
     ]]];
     UILabel *note=[self label:@"Only an existing next-only Sleep override can be changed. Recurring Health sleep schedules and ordinary alarms are never edited. Automatic updates remain off until enabled." size:13 bold:NO];
     note.textColor=[UIColor colorWithWhite:1 alpha:.65];[self.stack addArrangedSubview:note];
@@ -230,6 +237,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 - (void)refreshStatus {
     NSDictionary *state=[NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.status.plist"]?:@{};
     self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never"];
+    self.details.text=[self report];
 }
 - (NSString *)report {
     NSString *log=[NSString stringWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.log" encoding:NSUTF8StringEncoding error:nil]?:@"No SpringBoard log accessible.";

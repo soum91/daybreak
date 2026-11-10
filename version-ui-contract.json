@@ -26,6 +26,19 @@
           ]
         }
       ]
+    },
+    {
+      "name": "iOS 16 Dopamine Home Screen app",
+      "evidence": [
+        {
+          "path": "tweak/app/main.m",
+          "contains": [
+            "Installed",
+            "CFBundleShortVersionString",
+            "CFBundleVersion"
+          ]
+        }
+      ]
     }
   ]
 }
