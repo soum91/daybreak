@@ -1,5 +1,16 @@
 # Changelog
 
+## [tweak-v0.2.3] - 2026-11-10
+
+## Verified changes since tweak-v0.2.2
+
+- fix: package rootless uicache postinst and publish Daybreak 0.2.3 ([`3301cd45`](https://github.com/soum91/daybreak/commit/3301cd459733cd36c6eb768558842778be4f946f); `.github/workflows/tweak.yml`, `tweak/README.md`, `tweak/RELEASE_NOTES.md`, and 5 more)
+- Update Daybreak source to build 21 ([`975ab43e`](https://github.com/soum91/daybreak/commit/975ab43e9dd9d36bf21f905602384752ef6a43fb); `repo.json`)
+- Purge outdated Daybreak Actions artifact with private author metadata ([`7bc7f44d`](https://github.com/soum91/daybreak/commit/7bc7f44dfdeb7bb87fb0e02d094e1cef5ba7fc08); `.github/workflows/privacy-cleanup.yml`)
+- Remove superseded Daybreak package containing private attribution ([`f9656326`](https://github.com/soum91/daybreak/commit/f9656326545b267ce160aebf38a0367088c1c3d1); `.github/workflows/privacy-cleanup.yml`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.2...tweak-v0.2.3)
+
 ## [tweak-v0.2.2] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.1
