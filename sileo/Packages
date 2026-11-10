@@ -8,9 +8,9 @@ Depends: firmware (>= 16.0), firmware (<< 17.0), mobilesubstrate, preferenceload
 Conflicts: com.soum91.daybreak.rootful
 Homepage: https://github.com/soum91/daybreak
 Architecture: iphoneos-arm64
-Version: 0.2.1
+Version: 0.2.2
 Filename: debs/daybreak-tweak.deb
-Size: 27724
-MD5sum: ca8e9df98f9ea2308dfc960bae23bcc3
-SHA256: cb4dc207218fdf44eda2b8ab64b3301a7836f387a7e9d6007e604c4d6e91b185
+Size: 82978
+MD5sum: 6dccff87820d0640003952f216c0e77b
+SHA256: cd9a63ce718bcca17c0285e7bbcd41a6a4a1b7b41420e224485753d5cb4d036d
 
