@@ -1,5 +1,15 @@
 # Changelog
 
+## [tweak-v0.2.2] - 2026-11-10
+
+## Verified changes since tweak-v0.2.1
+
+- test: cover companion version UI and add selectable full diagnostic ([`5750bfe5`](https://github.com/soum91/daybreak/commit/5750bfe5bcb58885d17927770a49163c781f6c6d); `tweak/RELEASE_NOTES.md`, `tweak/app/main.m`, `version-ui-contract.json`)
+- Remove superseded Daybreak release with private package attribution ([`d8371669`](https://github.com/soum91/daybreak/commit/d83716697427b797698f5516b246893396d685b2); `.github/workflows/tweak.yml`)
+- fix: restore Daybreak Settings controls and add native Home Screen app ([`092f076c`](https://github.com/soum91/daybreak/commit/092f076c5c90c1fa7ef6b60feebd6e8e3324e6e8); `.github/workflows/tweak.yml`, `tweak/Makefile`, `tweak/README.md`, and 10 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.1...tweak-v0.2.2)
+
 ## [v0.1.21] - 2026-11-10
 
 ## Verified changes since v0.1.20
