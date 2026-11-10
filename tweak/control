@@ -1,8 +1,8 @@
 Package: com.soum91.daybreak.tweak
 Name: Daybreak (Dopamine)
-Version: 0.2.8
+Version: 0.2.9
 Architecture: iphoneos-arm64
-Description: Automatic daily calendar wake planning with guarded native Apple Sleep one-day overrides for iOS 16 Dopamine. Sleep service access and Watch sync must be verified on-device.
+Description: Hourly calendar wake checks, native one-day Apple Sleep overrides and optional status notifications for iOS 16 Dopamine. Second-iPhone and Watch alarm sync are not guaranteed.
 Maintainer: soum91
 Author: soum91
 Section: Tweaks

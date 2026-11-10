@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <EventKit/EventKit.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <UserNotifications/UserNotifications.h>
 #import <objc/message.h>
 #import <dlfcn.h>
 #import <string.h>
@@ -47,6 +48,10 @@ static BOOL DBBoolean(NSString *key) {
     id stored=CFBridgingRelease(CFPreferencesCopyAppValue((__bridge CFStringRef)key,(__bridge CFStringRef)DBPrefs));
     return [stored respondsToSelector:@selector(boolValue)] && [stored boolValue];
 }
+static BOOL DBBooleanDefaultOn(NSString *key) {
+    id stored=CFBridgingRelease(CFPreferencesCopyAppValue((__bridge CFStringRef)key,(__bridge CFStringRef)DBPrefs));
+    return ![stored respondsToSelector:@selector(boolValue)] || [stored boolValue];
+}
 static NSString *DBString(NSString *key) {
     id stored=CFBridgingRelease(CFPreferencesCopyAppValue((__bridge CFStringRef)key,(__bridge CFStringRef)DBPrefs));
     return [stored isKindOfClass:NSString.class]?stored:nil;
@@ -58,6 +63,25 @@ static void DBStore(NSString *key,id value) {
 static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     NSDateComponents *c=[calendar components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:date];
     return [NSString stringWithFormat:@"%04ld-%02ld-%02ld",(long)c.year,(long)c.month,(long)c.day];
+}
+static void DBPostStatusNotification(NSString *key,NSString *title,NSString *message) {
+    if(!DBBooleanDefaultOn(@"notificationsEnabled")) return;
+    // The hourly timer is owned by SpringBoard. A public local notification
+    // is requested only for a changed wake time or an actionable failure,
+    // never for each no-change hourly check.
+    @try {
+        UNMutableNotificationContent *content=[UNMutableNotificationContent new];
+        content.title=title;
+        content.body=message;
+        content.sound=UNNotificationSound.defaultSound;
+        NSString *identifier=[@"daybreak." stringByAppendingString:key?:NSUUID.UUID.UUIDString];
+        UNNotificationRequest *request=[UNNotificationRequest requestWithIdentifier:identifier content:content trigger:nil];
+        [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:request withCompletionHandler:^(NSError *error){
+            if(error) NSLog(@"[Daybreak] Notification delivery unavailable in SpringBoard: %@",error);
+        }];
+    } @catch(NSException *exception) {
+        NSLog(@"[Daybreak] Notification runtime error: %@",exception.reason);
+    }
 }
 
 @interface DBEngine : NSObject
@@ -93,7 +117,7 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
         DBStore(@"nativeAutomationMigrated",@YES);
     }
     [self report:DBBoolean(@"automaticEnabled")?
-        @"Native Sleep automation enabled. The iPhone 13 will calculate tomorrow's calendar wake at the configured evening hour and attempt a one-day Sleep override through the system Sleep framework.":
+        @"Hourly native Sleep automation enabled. The iPhone 13 checks tomorrow's calendar wake once per hour during the configured daytime window and attempts a one-day Sleep override when necessary.":
         @"Native Sleep automation paused by user. Calendar preview and one-time Apply are available."
           code:@"STARTED"];
     self.timer=[NSTimer scheduledTimerWithTimeInterval:300 target:self selector:@selector(tick)
@@ -102,13 +126,26 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
 }
 - (void)tick {
     if(!DBBoolean(@"automaticEnabled") || self.busy) return;
-    NSInteger hour=DBInteger(@"runHour",18,12,23);
+    NSInteger start=DBInteger(@"hourlyStartHour",12,12,23);
+    NSInteger end=DBInteger(@"hourlyEndHour",23,12,23);
     NSDateComponents *c=[NSCalendar.currentCalendar components:NSCalendarUnitHour fromDate:NSDate.date];
-    if(c.hour<hour) return;
+    if(c.hour<start || c.hour>end || start>end) return;
+    NSString *slot=[NSString stringWithFormat:@"%@-%02ld",DBDayKey(NSCalendar.currentCalendar,NSDate.date),(long)c.hour];
+    if([DBString(@"lastHourlySlot") isEqualToString:slot]) return;
+    // Each hour gets one fresh calendar calculation. A failed native attempt
+    // can be retried next hour, but never loops every five minutes.
+    DBStore(@"lastHourlySlot",slot);
     [self runPreviewOnly:NO manual:NO];
 }
 - (void)finish:(NSString *)message code:(NSString *)code {
     self.busy=NO; [self report:message code:code];
+    if([@[@"CALENDAR_DENIED",@"CALENDAR_MISSING",@"CALENDAR_EXCEPTION",@"INVALID_DATE"] containsObject:code]) {
+        NSString *key=[NSString stringWithFormat:@"%@:%@",DBDayKey(NSCalendar.currentCalendar,NSDate.date),code];
+        if(![DBString(@"lastNotifiedPlanningFailure") isEqualToString:key]) {
+            DBStore(@"lastNotifiedPlanningFailure",key);
+            DBPostStatusNotification(@"planning-needs-attention",@"Daybreak calendar issue",message);
+        }
+    }
 }
 - (void)runPreviewOnly:(BOOL)preview manual:(BOOL)manual {
     if(self.busy) { [self report:@"Another plan/update is in progress." code:@"BUSY"]; return; }
@@ -117,7 +154,6 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     NSDate *tomorrow=[calendar dateByAddingUnit:NSCalendarUnitDay value:1
                                            toDate:[calendar startOfDayForDate:now] options:0];
     NSString *morningKey=DBDayKey(calendar,tomorrow);
-    if(!preview && !manual && [DBString(@"lastAttemptMorning") isEqual:morningKey]) return;
     if(!preview && [calendar component:NSCalendarUnitHour fromDate:now]<12) {
         [self report:@"Updates only run after noon, so the next Sleep alarm belongs to tomorrow." code:@"TOO_EARLY"]; return;
     }
@@ -137,8 +173,6 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
             [self applyWake:fromApp morning:tomorrow manual:YES];return;
         }
     }
-    // Count failures as attempts too: never keep retrying an unclear Sleep write.
-    if(!preview && !manual) DBStore(@"lastAttemptMorning",morningKey);
     self.busy=YES;
     [self report:preview?@"Calculating tomorrow's wake preview.":@"Calculating tomorrow's wake update." code:@"PLANNING"];
     NSInteger lead=DBInteger(@"leadMinutes",60,0,720);
@@ -241,6 +275,7 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
         @"identifier":NSUUID.UUID.UUIDString,
         @"origin":manual?@"manual":@"automatic"
     });
+    self.status[@"requestedWake"]=wake;
     [self report:[NSString stringWithFormat:@"%@ native Sleep request queued for %@. SpringBoard is submitting it directly; Apple Health can retry the pending request when opened if this process lacks Sleep service access.",
                   manual?@"Manual":@"Automatic",wake] code:@"NATIVE_AUTO_SUBMITTED"];
     DBNativeSleepApplyIfRequested();
@@ -258,6 +293,9 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
         if([notification hasPrefix:healthPrefix]) {
             NSString *result=[notification substringFromIndex:healthPrefix.length];
             if([result isEqualToString:@"native_request_consumed"]) {
+                NSDictionary *request=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("nativeSleepRequest"),(__bridge CFStringRef)DBPrefs));
+                if([request isKindOfClass:NSDictionary.class] && [request[@"wake"] isKindOfClass:NSDate.class])
+                    DBShared.status[@"requestedWake"]=request[@"wake"];
                 // A one-shot request must not replay on subsequent Health opens.
                 DBStore(@"nativeSleepRequest",nil);
             }
@@ -266,6 +304,23 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
             if([result isEqualToString:@"native_readback_match"]) {
                 NSString *morning=DBShared.status[@"morning"];
                 if([morning isKindOfClass:NSString.class]) DBStore(@"lastSuccessMorning",morning);
+                NSDate *wake=DBShared.status[@"requestedWake"];
+                NSString *key=[NSString stringWithFormat:@"%@:%@",morning?:@"unknown",wake?:@"unknown"];
+                if(![DBString(@"lastNotifiedSuccess") isEqualToString:key]) {
+                    DBStore(@"lastNotifiedSuccess",key);
+                    NSDateFormatter *formatter=[NSDateFormatter new];formatter.timeStyle=NSDateFormatterShortStyle;
+                    NSString *time=[wake isKindOfClass:NSDate.class]?[formatter stringFromDate:wake]:@"requested time";
+                    DBPostStatusNotification(@"sleep-updated",@"Daybreak: Sleep updated",
+                        [NSString stringWithFormat:@"Tomorrow's native Sleep wake time is %@ on this iPhone. iPhone 17 / Watch delivery is not confirmed.",time]);
+                }
+            } else if([result hasPrefix:@"native_"] && ![@[@"native_request_consumed",@"native_write_submitted",@"native_api_ready",@"native_request_missing",@"native_already_matched"] containsObject:result]) {
+                NSString *today=DBDayKey(NSCalendar.currentCalendar,NSDate.date);
+                NSString *key=[NSString stringWithFormat:@"%@:%@",today,result];
+                if(![DBString(@"lastNotifiedFailure") isEqualToString:key]) {
+                    DBStore(@"lastNotifiedFailure",key);
+                    DBPostStatusNotification(@"sleep-needs-attention",@"Daybreak needs attention",
+                        [NSString stringWithFormat:@"Native Sleep update status: %@. Open Daybreak diagnostics.",result]);
+                }
             }
             if([result hasPrefix:@"native_"]) {
                 [DBShared report:[NSString stringWithFormat:@"Health native schedule operation: %@. iPhone 17 and Watch sync remain unverified until inspected.",result] code:@"NATIVE_HEALTH"];

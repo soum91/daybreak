@@ -42,7 +42,7 @@
 - (void)applyNow:(id)specifier {
     (void)specifier;
     [self info:@"Automatic Sleep updates"
-       message:@"With automatic mode on, Daybreak attempts tomorrow's one-day native Sleep override every evening without an Apply step. Open the Daybreak Home Screen app and tap Run automation now if you want an immediate attempt. Check diagnostics to confirm a native read-back; iPhone 17 and Apple Watch sync still require verification. No ordinary MobileTimer alarm is created."];
+       message:@"With automatic mode on, Daybreak rechecks tomorrow's calendar once per hour during the configured daytime window, then attempts a one-day native Sleep override without an Apply step. Use Run automation now in the Daybreak app to request an immediate check. Native changes on this iPhone do not prove that iPhone 17 or Apple Watch received the time. No ordinary MobileTimer alarm is created."];
 }
 - (void)chooseCalendar:(id)specifier {
     (void)specifier;

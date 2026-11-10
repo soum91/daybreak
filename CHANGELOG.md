@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.9 (2026-11-10)
+
+- Changed the SpringBoard scheduler from one evening attempt per morning to an hourly calendar recheck, defaulting to 12 PM through 11 PM. Persisted hourly slots suppress duplicate retries within an hour, but a failed attempt does not block the next hourly check.
+- Added optional local status notifications for successful native Sleep read-back and actionable native/Calendar failures. Kept no-change hours silent; notification delivery from SpringBoard has not been physically verified.
+- Added editable hourly start/end hours and a notifications switch to Daybreak's Home Screen app and Settings pane, with one-time notification authorization in the app.
+- The user confirmed one manual native Sleep override changed the iPhone 13's next wake time on iOS 16.1.1. The iPhone 17 still displayed its previous wake time. This build does not claim cross-device synchronization or Watch alarm delivery.
+
 ## Daybreak Dopamine tweak 0.2.8 (2026-11-10)
 
 - Enabled native Sleep automation in `tweak/Tweak.m`: SpringBoard no longer disables `automaticEnabled` on launch or rejects scheduled writes before planning. It now attempts one calendar-driven native Sleep override every evening (18:00 default), retaining the no-repeat-per-morning guard.

@@ -1,3 +1,10 @@
+## Daybreak Dopamine 0.2.9 (hourly Sleep recalculation and notifications)
+
+- Replaced the one-attempt-per-morning schedule guard with one new calendar calculation per hour between configurable daytime hours (12 PM to 11 PM by default). The native writer avoids re-saving a wake time that already matches; failures can be retried next hour.
+- Added optional local status notifications from the SpringBoard tweak when the native writer confirms a matching read-back, or when Calendar/native write failures need attention. The app asks for notification permission; SpringBoard notification delivery remains unverified on-device.
+- Added Hourly start/end controls and a Notifications switch in the Home Screen app and Settings pane. Repeating weekly Sleep schedule remains protected, and no ordinary alarms are created.
+- The user confirmed that manually applying a test event changed the iPhone 13's native next wake time. Its iPhone 17 counterpart still showed the old time. iCloud Health data synchronization is not evidence that next-only Sleep alarm overrides synchronize across iPhones. No Watch-only ringing is claimed.
+
 ## Daybreak Dopamine 0.2.8 (automatic native Sleep requests)
 
 - Removed the legacy `automaticEnabled` reset and the early-return that blocked all scheduled native Sleep writes. Existing installs migrate once to automatic mode ON, but the user can switch it off afterward.

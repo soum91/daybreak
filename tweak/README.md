@@ -6,12 +6,12 @@ The Sileo package installs **both** a native Daybreak Home Screen control app an
 a Settings → Daybreak pane. Neither needs Siri, XCTest, a development image,
 or a Windows host. The existing iOS 17+ app remains a separate historical target.
 
-**0.2.8 enables the daily native Sleep schedule automation path.**
+**0.2.9 recalculates tomorrow's wake every hour during the configured daytime window.**
 Device diagnostics on iPhone 13 confirmed `HEALTH_PROBE schedule_found` in
 Apple Health on iOS 16.1.1. The writer uses the private `HKSPSleepStore`
 service rather than Health database edits, ordinary alarms, AlarmKit, or the
-previous local-only MobileTimer override. Every evening, SpringBoard now
-computes tomorrow's calendar plan and attempts the native write automatically,
+previous local-only MobileTimer override. By default, SpringBoard checks
+tomorrow's calendar at least once per hour from 12 PM through 11 PM, and attempts the native write automatically,
 without asking the user to press Apply. It is not yet verified that the
 private Sleep service allows SpringBoard writes on iOS 16.1.1 or that those
 changes propagate to the iPhone 17 and paired Watch.
@@ -30,8 +30,9 @@ changes propagate to the iPhone 17 and paired Watch.
 4. In Apple's Health process, run the confirmed `HKSleepSchedule` read-only
    query and inspect availability of `HKSPSleepStore` and the Sleep schedule
    model. Report fixed status codes via Darwin notifications.
-5. At the configured evening hour (18:00 default), automatically store a
-   short-lived one-shot calendar wake request in local preferences. SpringBoard
+5. At most once every calendar hour during a configurable daytime window
+   (12:00 to 23:59 by default), store a short-lived one-shot calendar wake
+   request in local preferences. SpringBoard
    attempts the native writer immediately. Health can consume the pending
    request on foreground if the background process lacks Sleep service access.
    A separate explicit app Apply remains available;
@@ -51,7 +52,7 @@ SpringBoard's EventKit access is still unverified for unattended automation.
 If Calendar access is denied to SpringBoard, the diagnostic reports
 `CALENDAR_DENIED` and this route cannot autonomously read events. The app's
 manual calendar planning is available with the user's Calendar authorization.
-Daily automation is enabled by default in 0.2.8, but reliable execution and
+Hourly automation is enabled by default in 0.2.9, but reliable execution and
 separate iPhone 17 / Watch alarm delivery require device evidence.
 
 ## Build
@@ -72,12 +73,12 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
 1. Add `https://raw.githubusercontent.com/soum91/daybreak/main/sileo/` to Sileo
    and install **Daybreak (Dopamine)** after the build has published its index.
    Restart SpringBoard if Sileo does not automatically respring.
-2. Open the **Daybreak Home Screen app**. Verify **0.2.8 (9)** in the app or
+2. Open the **Daybreak Home Screen app**. Verify **0.2.9 (10)** in the app or
    Settings. In particular, inspect that the installed tweak was updated.
 3. In the app, grant Calendar access, choose the calendar and tap **Preview
    tomorrow**. The preview should show a calculated time and event count.
 4. **Automatic native Sleep schedule** should be switched ON. The engine runs
-   each evening at the configured hour (18:00 default). To run it immediately
+   once per hour from the configured start hour to end hour (12 PM to 11 PM default). To run it immediately
    without waiting, tap **Run automation now**.
 5. Tap **Refresh status** after a few seconds. The SpringBoard engine will
    attempt the private Sleep service itself. If native service access fails in

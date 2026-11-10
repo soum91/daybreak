@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <EventKit/EventKit.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <UserNotifications/UserNotifications.h>
 #import <notify.h>
 #import "../DBPlanner.h"
 #import "../DBDiagnosticExport.h"
@@ -22,8 +23,10 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 @property(nonatomic) UITextField *leadField;
 @property(nonatomic) UITextField *fallbackHourField;
 @property(nonatomic) UITextField *fallbackMinuteField;
-@property(nonatomic) UITextField *runHourField;
+@property(nonatomic) UITextField *hourlyStartField;
+@property(nonatomic) UITextField *hourlyEndField;
 @property(nonatomic) UISwitch *autoSwitch;
+@property(nonatomic) UISwitch *notificationsSwitch;
 @property(nonatomic) UISwitch *enableSwitch;
 @property(nonatomic) EKEventStore *events;
 @property(nonatomic) BOOL busy;
@@ -115,11 +118,15 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     self.leadField=[self field:@"leadMinutes" fallback:60];
     self.fallbackHourField=[self field:@"fallbackHour" fallback:8];
     self.fallbackMinuteField=[self field:@"fallbackMinute" fallback:30];
-    self.runHourField=[self field:@"runHour" fallback:18];
+    self.hourlyStartField=[self field:@"hourlyStartHour" fallback:12];
+    self.hourlyEndField=[self field:@"hourlyEndHour" fallback:23];
     self.autoSwitch=[UISwitch new];
     id storedAuto=DBValue(@"automaticEnabled");
     self.autoSwitch.on=[storedAuto respondsToSelector:@selector(boolValue)]?[storedAuto boolValue]:YES;
     self.autoSwitch.enabled=YES;
+    self.notificationsSwitch=[UISwitch new];
+    id notifications=DBValue(@"notificationsEnabled");
+    self.notificationsSwitch.on=[notifications respondsToSelector:@selector(boolValue)]?[notifications boolValue]:YES;
     self.enableSwitch=[UISwitch new];self.enableSwitch.on=[DBValue(@"enableNextSleepAlarm") boolValue];
     self.enableSwitch.enabled=NO;
     [self.stack addArrangedSubview:[self card:@[
@@ -127,11 +134,13 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self fieldRow:@"Preparation minutes (0–720)" field:self.leadField],
         [self fieldRow:@"Fallback hour (0–23)" field:self.fallbackHourField],
         [self fieldRow:@"Fallback minute (0–59)" field:self.fallbackMinuteField],
-        [self fieldRow:@"Evening run hour (12–23)" field:self.runHourField],
+        [self fieldRow:@"Hourly checks start (12–23)" field:self.hourlyStartField],
+        [self fieldRow:@"Hourly checks end (12–23)" field:self.hourlyEndField],
         [self button:@"Choose calendar" action:@selector(chooseCalendar) emphasized:NO],
         [self switchRow:@"Automatic native Sleep schedule" control:self.autoSwitch],
+        [self switchRow:@"Notifications for updates and errors" control:self.notificationsSwitch],
         [self button:@"Run automation now" action:@selector(runAutomationNow) emphasized:NO],
-        [self label:@"The iPhone 13 plans tomorrow's wake at the configured evening hour, then requests an Apple native one-day Sleep override. It does not create an ordinary alarm." size:13 bold:NO]
+        [self label:@"Daybreak rechecks tomorrow's calendar once every hour between the selected hours, including changes to existing appointments. Only native one-day Sleep overrides are requested, never ordinary alarms. A successful local Sleep change is not proof of iPhone 17 sync." size:13 bold:NO]
     ]]];
     self.status=[self label:@"No diagnostic yet." size:13 bold:NO];
     self.status.textColor=[UIColor colorWithWhite:1 alpha:.78];
@@ -148,7 +157,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO],
         [self label:@"Full selectable report" size:15 bold:YES],self.details
     ]]];
-    UILabel *note=[self label:@"Daybreak now attempts native Sleep updates automatically in SpringBoard. Repeating weekdays are preserved and ordinary alarms are not created. Calendar access in SpringBoard, native Sleep writes and Watch-only ringing still depend on real-device permissions and must not be assumed successful from a build alone. Keep a backup alarm." size:13 bold:NO];
+    UILabel *note=[self label:@"Local notifications from the SpringBoard tweak are experimental and can be blocked by iOS permissions. The iPhone 13's native Sleep change has been observed, but automatic execution and synchronization to a second iPhone and its Watch remain unverified. Keep a backup alarm." size:13 bold:NO];
     note.textColor=[UIColor colorWithWhite:1 alpha:.65];[self.stack addArrangedSubview:note];
     [self refreshStatus];
 }
@@ -157,11 +166,20 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     DBWrite(@"leadMinutes",@(MAX(0,MIN(720,self.leadField.text.integerValue))));
     DBWrite(@"fallbackHour",@(MAX(0,MIN(23,self.fallbackHourField.text.integerValue))));
     DBWrite(@"fallbackMinute",@(MAX(0,MIN(59,self.fallbackMinuteField.text.integerValue))));
-    DBWrite(@"runHour",@(MAX(12,MIN(23,self.runHourField.text.integerValue))));
+    NSInteger start=MAX(12,MIN(23,self.hourlyStartField.text.integerValue));
+    NSInteger end=MAX(start,MIN(23,self.hourlyEndField.text.integerValue));
+    DBWrite(@"hourlyStartHour",@(start));
+    DBWrite(@"hourlyEndHour",@(end));
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)saveSwitches {
     DBWrite(@"automaticEnabled",@(self.autoSwitch.isOn));
+    DBWrite(@"notificationsEnabled",@(self.notificationsSwitch.isOn));
+    if(self.notificationsSwitch.isOn) {
+        [[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:(UNAuthorizationOptionAlert|UNAuthorizationOptionSound) completionHandler:^(BOOL granted,NSError *error){
+            NSLog(@"[Daybreak] Companion notification authorization: %@ %@",granted?@"granted":@"denied",error?:@"");
+        }];
+    }
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)runAutomationNow {
@@ -283,7 +301,16 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     (void)application;(void)options;
     self.window=[[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     self.window.rootViewController=[DBHomeController new];
-    [self.window makeKeyAndVisible];return YES;
+    [self.window makeKeyAndVisible];
+    if(![DBValue(@"notificationsEnabled") respondsToSelector:@selector(boolValue)] || [DBValue(@"notificationsEnabled") boolValue]) {
+        [[UNUserNotificationCenter currentNotificationCenter] getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *settings){
+            if(settings.authorizationStatus==UNAuthorizationStatusNotDetermined)
+                [[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:(UNAuthorizationOptionAlert|UNAuthorizationOptionSound) completionHandler:^(BOOL granted,NSError *error){
+                    NSLog(@"[Daybreak] Notification authorization: %@ %@",granted?@"granted":@"denied",error?:@"");
+                }];
+        }];
+    }
+    return YES;
 }
 @end
 
