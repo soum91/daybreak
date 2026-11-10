@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 jobs:
   remove-superseded-release:
     runs-on: ubuntu-latest
@@ -20,4 +21,13 @@ jobs:
           gh release view 'tweak-v0.2.1' >/dev/null
           if gh release view 'tweak-v0.2.0' >/dev/null 2>&1; then
             gh release delete 'tweak-v0.2.0' --yes --cleanup-tag
+          fi
+      - name: Remove pre-correction workflow archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh api "/repos/${GH_REPO}/actions/artifacts/13744196585" >/dev/null 2>&1; then
+            gh api -X DELETE "/repos/${GH_REPO}/actions/artifacts/13744196585"
           fi
