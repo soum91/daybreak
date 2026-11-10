@@ -1,5 +1,15 @@
 # Changelog
 
+## [tweak-v0.2.0] - 2026-11-10
+
+## Verified changes since v0.1.19
+
+- fix: dynamically resolve Settings Preferences host in rootless bundle ([`cae94861`](https://github.com/soum91/daybreak/commit/cae948618db1543d175c1977994f25b78c9682b3); `tweak/prefs/Makefile`)
+- feat: add Daybreak iOS 16 Dopamine tweak and Sileo build pipeline ([`1f5aaeaa`](https://github.com/soum91/daybreak/commit/1f5aaeaab9461242e4db3351e8d4ea28c4fa1d37); `.github/workflows/build.yml`, `.github/workflows/tweak.yml`, `scripts/build_sileo.py`, and 16 more)
+- Update Daybreak source to build 19 ([`d04172fb`](https://github.com/soum91/daybreak/commit/d04172fb99383d66892c39413c59799b83d09bb9); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.19...tweak-v0.2.0)
+
 ## 0.1.20
 
 Clock storage discovery no longer stops after finding the Clock app preferences container. Build 18 found only default sound/timer preferences on the user's device; that does not establish that daemon/shared storage was searched completely.
