@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.6 (2026-11-10)
+
+- Implemented a guarded, one-time native Sleep schedule override in `tweak/DBNativeSleep.m`, injected only into Apple's Health app. This uses the system `HKSPSleepStore` path, not ordinary alarms, AlarmKit, or direct Health database writes.
+- Added a ten-minute, single-use calendar plan handoff from the Daybreak Home Screen app. Health verifies the requested morning, existing enabled alarm, one-day override and unchanged repeating weekdays before submitting a save, then queries native Sleep for a local read-back.
+- Extended the SpringBoard diagnostic bridge for explicit native status codes and retired the Settings button's old local-only Apply behavior. Automatic recurring changes remain disabled.
+- Bumped the installed Home Screen app, Settings bundle and package to 0.2.6 (7). The earlier `HEALTH_PROBE schedule_found` read test succeeded on the owner's iOS 16.1.1 device, but **this write path, cross-device propagation and Watch-only ringing remain unverified**.
+
 ## Daybreak Dopamine tweak 0.2.5 (2026-11-10)
 
 - Fixed diagnostic export paths in `tweak/app/main.m` and `tweak/prefs/DBRootListController.m` using a shared `DBDiagnosticExport.h` helper.

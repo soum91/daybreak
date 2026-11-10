@@ -6,43 +6,44 @@ The Sileo package installs **both** a native Daybreak Home Screen control app an
 a Settings → Daybreak pane. Neither needs Siri, XCTest, a development image,
 or a Windows host. The existing iOS 17+ app remains a separate historical target.
 
-**0.2.5 is a read-only diagnostic update, not a working cross-device alarm
-automation release.** The user requires the *native* Health Sleep schedule to
-change on iPhone 13 and sync to the iPhone 17 and the Watch paired with that
-iPhone. The old MobileTimer override operation affected only one phone and
-cannot establish that requirement; it has been disabled to prevent conflicting
-wake alarms. No ordinary alarms or AlarmKit alarms are created.
+**0.2.6 adds an experimental one-time native Sleep schedule writer.**
+Device diagnostics on iPhone 13 confirmed `HEALTH_PROBE schedule_found` in
+Apple Health on iOS 16.1.1. The writer uses the private `HKSPSleepStore`
+service rather than Health database edits, ordinary alarms, AlarmKit, or the
+previous local-only MobileTimer override. It is not yet verified that a native
+save works on iOS 16.1.1 or propagates to the iPhone 17 and paired Watch.
+Automatic changes remain disabled until device testing proves both behaviors.
 
 ## Plan and scope
 
-1. Inject a small engine into SpringBoard for calendar preview and diagnostics,
-   with all schedule mutations disabled. No LaunchDaemon or mobiletimerd hooks.
+1. Inject a small engine into SpringBoard for calendar preview and diagnostics.
+   SpringBoard never writes Sleep schedules. No LaunchDaemon or mobiletimerd hooks.
 2. Use EventKit to select tomorrow's earliest non-all-day, non-cancelled,
    non-declined event before noon, from one selected calendar or all calendars.
    Subtract 0–720 minutes of preparation time. With no qualifying event use 08:30.
 3. Refuse wake times crossing back into today, expired wake times, and attempts
    before noon. Automatic mode attempts at most once per target morning.
-4. Separately inject the read-only `DaybreakHealthProbe.dylib` into Apple's
-   Health app. Resolve private HealthKit `HKSleepSchedule` and
-   `HKObjectType.sleepScheduleType`, then query at most one sample. Transmit
-   only fixed outcome codes through Darwin notification; no private Sleep
-   values, database files or calendar contents leave the Health process.
-5. Confirm from device diagnostics that the Health read path succeeds before
-   developing an actual native schedule write, and separately test whether a
-   **manual native Health schedule change** syncs to the second iPhone/Watch.
-   The existence of a HealthKit sample is not proof that Apple syncs alarms.
-6. Preview tomorrow's calendar-driven wake in the Daybreak app. The prior
-   local-only MobileTimer mutation and automatic writes are disabled in
-   0.2.5. Copy, Share, Save to Files and selectable diagnostics remain.
+4. In Apple's Health process, run the confirmed `HKSleepSchedule` read-only
+   query and inspect availability of `HKSPSleepStore` and the Sleep schedule
+   model. Report fixed status codes via Darwin notifications.
+5. On an explicit app Apply, store a one-shot, ten-minute calendar wake request
+   in local preferences. Health consumes it on foreground or notification;
+   refuse expired dates, missing framework methods, wrong morning, disabled
+   alarms, invalid occurrences, or changes to repeating weekday occurrences.
+6. Send only the new native **single-day override** through
+   `HKSPSleepStore.saveCurrentSleepSchedule:completion:` and check the
+   resulting Health schedule. This is a private iOS 16 runtime compatibility
+   experiment. A local read-back is not proof of iCloud or Watch sync.
 
-The Health probe is a **device-verification preview**. Query permissions, process
-injection and iCloud schedule propagation have not been verified on the physical
-device. All native schedule writes are intentionally disabled. The probe does
-not manufacture an alarm, patch any database or alter existing Sleep schedules.
+The private HealthKit read-only query and the Health injection were confirmed
+on the user's iPhone 13. The new **write path has not yet been physically
+verified**. It fails closed if the iOS 16 private Sleep APIs do not match the
+researched signatures. The writer does not manufacture an alarm or edit SQLite.
 
-SpringBoard's EventKit access is unverified for future automation. The app's
-manual calendar preview is available, but automatic edits must wait for a
-verified native Health Sleep schedule write and a separate iCloud/Watch test.
+SpringBoard's EventKit access is unverified for unattended automation. The app
+calculates its own calendar plan with the user's Calendar authorization.
+Automatic edits must wait for a successful native Health schedule write and a
+separate iPhone 17 / Watch test.
 
 ## Build
 
@@ -62,20 +63,25 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
 1. Add `https://raw.githubusercontent.com/soum91/daybreak/main/sileo/` to Sileo
    and install **Daybreak (Dopamine)** after the build has published its index.
    Restart SpringBoard if Sileo does not automatically respring.
-2. Open the **Daybreak Home Screen app**. Verify **0.2.5 (6)**. The Settings
-   pane and app should both display that schedule writes are unavailable.
+2. Open the **Daybreak Home Screen app**. Verify **0.2.6 (7)** in the app or
+   Settings. In particular, inspect that the installed tweak was updated.
 3. In the app, grant Calendar access, choose the calendar and tap **Preview
    tomorrow**. The preview should show a calculated time and event count.
-4. Open **Apple Health** on the iPhone 13, wait ten seconds while the injected
-   read-only probe runs, return to Daybreak, and tap **Refresh status**.
-5. Export the diagnostic with **Copy**, **Share** or **Save to Files**. A result
-   of `schedule_found` only means a private schedule sample was readable. A
-   `query_error` or `query_empty` needs investigation and must not be treated
-   as proof that the sleep schedule does not exist.
-   Copy should verify the full pasteboard value; Save to Files should use a
-   verified cache file instead of writing to `/tmp`. Both require device testing.
-6. Keep native Sleep alarms unchanged until a safe update mechanism and actual
-   iCloud/Watch propagation have been demonstrated.
+4. Confirm tomorrow's planned wake looks correct, then tap **Apply once to
+   native Sleep** in the Daybreak app. This is a real native schedule write
+   request, not a preview. No write is attempted until Apple Health accepts it.
+5. Open **Apple Health** on the iPhone 13 within ten minutes, wait ten seconds,
+   return to Daybreak, and tap **Refresh status**. If it says
+   `native_api_ready`, the runtime API was found, but no save is proven.
+   `native_readback_match` means the local native Sleep schedule contains the
+   requested time. Other `native_*` codes explain why it refused or could
+   not verify a write. The original `schedule_found` remains a read-only result.
+6. Only after a local `native_readback_match`, compare the actual Sleep |
+   Wake Up time on the iPhone 17 and paired Watch, and verify only the desired
+   device rings. **Do not rely on this experimental writer as your sole
+   wake-up alarm until that full test passes.**
+7. Export diagnostics with **Copy**, **Share**, or **Save to Files**. These
+   paths were adjusted in 0.2.5 but still require physical retesting.
 
 The log is stored on-device at
 `/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.log`, with a readable
@@ -83,7 +89,7 @@ status plist alongside it. No event titles or calendar contents are uploaded.
 
 ## Safety / rollback
 
-Uninstall in Sileo to remove the read-only Health probe and Daybreak UI.
-The 0.2.5 package does not edit the base Sleep schedule or any other alarm.
-Any overrides written by an *earlier* package remain Apple-owned and can be
-reviewed in Clock or Health; uninstalling cannot undo those historic changes.
+Uninstall in Sileo to remove the Health hook and Daybreak UI. A successful
+native one-time override is Apple-owned and remains in the Health/Clock Sleep
+schedule after uninstall; undo it there if needed. The repeating weekly
+schedule is intentionally untouched by the writer.

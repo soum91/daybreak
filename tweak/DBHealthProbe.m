@@ -1,7 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <HealthKit/HealthKit.h>
+#import <UIKit/UIKit.h>
 #import <objc/message.h>
 #import <notify.h>
+#import "DBNativeSleep.h"
 
 // Do not access the Health SQLite database, mutate any samples, or request
 // authorization. This code only runs in Apple's own Health app, once on launch.
@@ -47,11 +49,33 @@ static void DBHPRun(void) {
     }
 }
 
+static void DBHPRequestNotification(CFNotificationCenterRef center, void *observer,
+                                    CFStringRef name, const void *object,
+                                    CFDictionaryRef userInfo) {
+    (void)center; (void)observer; (void)name; (void)object; (void)userInfo;
+    DBNativeSleepApplyIfRequested();
+}
+
 __attribute__((constructor)) static void DBHPStart(void) {
     @autoreleasepool {
         if(![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.Health"]) return;
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(), NULL,
+            DBHPRequestNotification, CFSTR("com.soum91.daybreak.nativeapply"),
+            NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
+                                                          object:nil queue:NSOperationQueue.mainQueue
+                                                      usingBlock:^(NSNotification *notification) {
+            (void)notification;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2*NSEC_PER_SEC),
+                           dispatch_get_main_queue(), ^{ DBNativeSleepApplyIfRequested(); });
+        }];
         // Let the host finish launch and initialize its HealthKit session.
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW,6*NSEC_PER_SEC),
-                       dispatch_get_main_queue(),^{ DBHPRun(); });
+                       dispatch_get_main_queue(), ^{
+            DBHPRun();
+            DBNativeSleepCheck();
+            DBNativeSleepApplyIfRequested();
+        });
     }
 }

@@ -109,7 +109,8 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     [self.stack addArrangedSubview:[self card:@[
         [self label:@"Tomorrow's wake" size:21 bold:YES],self.preview,
         [self button:@"Preview tomorrow" action:@selector(previewTapped) emphasized:YES],
-        [self label:@"Apple Health schedule sync check: open the Health app on this iPhone 13, wait ten seconds, return here and tap Refresh status. The Health-side check is read-only. Do not assume its Sleep wake alarm synchronizes to the iPhone 17 or Watch yet." size:13 bold:NO]
+        [self button:@"Apply once to native Sleep" action:@selector(applyTapped) emphasized:NO],
+        [self label:@"After applying, open Apple Health on this iPhone 13 to let its native Sleep service process the one-time request. Return here and tap Refresh status. Then verify Health/Clock on iPhone 17 and the Watch separately. This is a first-device trial, not yet automatic." size:13 bold:NO]
     ]]];
     self.leadField=[self field:@"leadMinutes" fallback:60];
     self.fallbackHourField=[self field:@"fallbackHour" fallback:8];
@@ -142,7 +143,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO],
         [self label:@"Full selectable report" size:15 bold:YES],self.details
     ]]];
-    UILabel *note=[self label:@"This diagnostic build does not write native Health Sleep schedules or ordinary alarms. The earlier local-only MobileTimer override path is disabled because it cannot establish iCloud/Watch synchronization. Existing wake alarms are unchanged." size:13 bold:NO];
+    UILabel *note=[self label:@"Daybreak's one-time native Sleep writer uses a guarded Apple Health schedule override. It never creates an ordinary alarm or changes repeating days. Native save success does not prove that the paired Watch received the update, or that this iPhone will remain silent. Automatic updates remain disabled until real-device verification." size:13 bold:NO];
     note.textColor=[UIColor colorWithWhite:1 alpha:.65];[self.stack addArrangedSubview:note];
     [self refreshStatus];
 }
@@ -220,19 +221,17 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         self.busy=NO;
         if(!apply) return;
         if(!valid){[self alert:@"Wake time invalid" message:@"The calculated time crossed into today or has already passed. No update sent."];return;}
-        // A freshly calculated, short-lived plan can be used by the tweak even
-        // if SpringBoard's own EventKit authorization is unavailable.
-        DBWrite(@"appPlannedWake",wake);DBWrite(@"appPlanTimestamp",NSDate.date);DBWrite(@"appPlanMorning",morning);
-        notify_post("com.soum91.daybreak.apply");
-        [self alert:@"Sleep update requested" message:@"The tweak is checking the next-only Sleep override. Refresh the diagnostic after a few seconds, then verify Clock."];
+        // Only Apple's Health app receives this short-lived one-shot request.
+        // SpringBoard's historical device-local MobileTimer writer stays off.
+        DBWrite(@"nativeSleepRequest",@{@"wake":wake,@"morning":morning,
+             @"created":NSDate.date,@"identifier":NSUUID.UUID.UUIDString});
+        notify_post("com.soum91.daybreak.nativeapply");
+        [self alert:@"Native Sleep request prepared" message:@"Open Apple Health on this iPhone 13 now, wait about ten seconds, then return to Daybreak and Refresh status. Check the result before trusting the Watch alarm. The request expires in ten minutes."];
     }];
 }
 - (void)previewTapped {[self calculate:NO];}
 - (void)applyTapped {
-    UIAlertController *a=[UIAlertController alertControllerWithTitle:@"Apply to Sleep | Wake Up?" message:@"Only an existing next-only override for tomorrow will be changed. Recurring sleep schedules remain untouched." preferredStyle:UIAlertControllerStyleAlert];
-    [a addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-    [a addAction:[UIAlertAction actionWithTitle:@"Apply once" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){(void)action;[self calculate:YES];}]];
-    [self presentViewController:a animated:YES completion:nil];
+    [self calculate:YES];
 }
 - (void)refreshStatus {
     NSDictionary *state=[NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.status.plist"]?:@{};

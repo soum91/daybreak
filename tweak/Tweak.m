@@ -292,9 +292,17 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
         NSString *healthPrefix=@"com.soum91.daybreak.healthprobe.";
         if([notification hasPrefix:healthPrefix]) {
             NSString *result=[notification substringFromIndex:healthPrefix.length];
+            if([result isEqualToString:@"native_request_consumed"]) {
+                // A one-shot request must not replay on subsequent Health opens.
+                DBStore(@"nativeSleepRequest",nil);
+            }
             DBShared.status[@"healthProbe"]=result;
             DBShared.status[@"healthProbeUpdated"]=NSDate.date;
-            [DBShared report:[NSString stringWithFormat:@"Health app read-only schedule probe: %@. No Sleep data or alarm was modified.",result] code:@"HEALTH_PROBE"];
+            if([result hasPrefix:@"native_"]) {
+                [DBShared report:[NSString stringWithFormat:@"Health native schedule operation: %@. iPhone 17 and Watch sync remain unverified until inspected.",result] code:@"NATIVE_HEALTH"];
+            } else {
+                [DBShared report:[NSString stringWithFormat:@"Health app read-only schedule probe: %@. No Sleep data or alarm was modified by this probe.",result] code:@"HEALTH_PROBE"];
+            }
         }
         else if([notification isEqualToString:@"com.soum91.daybreak.preview"]) [DBShared runPreviewOnly:YES manual:YES];
         else if([notification isEqualToString:@"com.soum91.daybreak.apply"]) [DBShared runPreviewOnly:NO manual:YES];
@@ -312,7 +320,14 @@ __attribute__((constructor)) static void DBLaunch(void) {
             CFNotificationCenterRef center=CFNotificationCenterGetDarwinNotifyCenter();
             for(NSString *notification in @[@"com.soum91.daybreak.preferences",@"com.soum91.daybreak.preview",@"com.soum91.daybreak.apply"])
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)notification,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
-            for(NSString *result in @[@"class_missing",@"type_missing",@"type_invalid",@"type_available",@"query_error",@"query_empty",@"schedule_found",@"unexpected_sample",@"query_unavailable",@"probe_exception"]) {
+            for(NSString *result in @[@"class_missing",@"type_missing",@"type_invalid",@"type_available",@"query_error",@"query_empty",@"schedule_found",@"unexpected_sample",@"query_unavailable",@"probe_exception",
+                @"native_framework_missing",@"native_api_missing",@"native_model_unavailable",@"native_schedule_unavailable",
+                @"native_api_ready",@"native_probe_exception",@"native_request_invalid",@"native_next_day_mismatch",
+                @"native_override_api_missing",@"native_override_unavailable",@"native_alarm_off",
+                @"native_components_missing",@"native_components_invalid",@"native_occurrence_invalid",
+                @"native_repeating_guard",@"native_preview_mismatch",@"native_request_consumed",
+                @"native_write_submitted",@"native_save_rejected",@"native_already_matched",@"native_readback_match",
+                @"native_readback_unverified",@"native_readback_exception",@"native_write_exception"]) {
                 NSString *name=[@"com.soum91.daybreak.healthprobe." stringByAppendingString:result];
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)name,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             }

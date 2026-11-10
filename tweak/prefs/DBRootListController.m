@@ -41,14 +41,8 @@
 }
 - (void)applyNow:(id)specifier {
     (void)specifier;
-    UIAlertController *alert=[UIAlertController alertControllerWithTitle:@"Apply to the next Sleep alarm?"
-        message:@"Daybreak will only update an existing next-only Sleep | Wake Up override for tomorrow. It will refuse recurring schedules and ordinary alarms. Check Clock afterward."
-        preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Apply once" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
-        (void)action; [self notify:"com.soum91.daybreak.apply"];
-    }]];
-    [self presentViewController:alert animated:YES completion:nil];
+    [self info:@"Use the Daybreak app"
+       message:@"Open the Daybreak Home Screen app, Preview tomorrow, and tap Apply once to native Sleep. Then open Apple Health on this iPhone 13. The old per-device MobileTimer write is still disabled in Settings."];
 }
 - (void)chooseCalendar:(id)specifier {
     (void)specifier;

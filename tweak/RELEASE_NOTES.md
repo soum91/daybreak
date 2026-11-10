@@ -1,4 +1,12 @@
-## Daybreak Dopamine 0.2.5 (diagnostic Copy and export repair)
+## Daybreak Dopamine 0.2.6 (experimental native Health Sleep override)
+
+- The user's iOS 16.1.1 device reported `HEALTH_PROBE schedule_found`; this confirms the Health-app read-only `HKSleepSchedule` path was accessible.
+- Added `DBNativeSleep.m` to the Health-app-only tweak. It dynamically loads Apple's private `Sleep.framework`, checks `HKSPSleepStore` and model selectors, and attempts a **one-time native Sleep override**, not an ordinary alarm or MobileTimer override.
+- The Daybreak Home Screen app now offers an explicit Apply that sends a ten-minute calendar plan to Health. The Health writer checks the target morning, existing enabled Sleep alarm, override validity, and preservation of every repeating weekday before saving. A successful callback is followed by a native read-back.
+- Health reports fixed native status codes to SpringBoard, and the Settings pane routes manual Apply to the Home Screen app. Unattended automatic schedule writes remain off.
+- **Unverified on device:** whether iOS 16.1.1 exposes the expected native Sleep-store methods, accepts the write, and syncs to the iPhone 17 / Watch. No synchronized or Watch-only wake alarm is claimed until those tests pass.
+
+## Earlier 0.2.5 changes (diagnostic Copy and export repair)
 
 - Shared the diagnostic Copy and Save logic between the Home Screen app and Settings pane in `DBDiagnosticExport.h`.
 - Copy now verifies the full clipboard content, tries a standard UTF-8 pasteboard item as a fallback, and gives a specific error when verification fails. Copy does **not** write to `/tmp`.
