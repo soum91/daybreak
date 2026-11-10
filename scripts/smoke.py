@@ -13,7 +13,9 @@ udid = phone['udid']
 if phone['state'] != 'Booted':
     subprocess.run(['xcrun','simctl','boot',udid],check=True,timeout=60)
 subprocess.run(['xcrun','simctl','bootstatus',udid,'-b'],check=True,timeout=180)
-subprocess.run(['xcrun','simctl','install',udid,'build/simulator/Daybreak.app'],check=True,timeout=60)
+# A fresh hosted Simulator may still be registering apps after bootstatus.
+# Keep installation bounded, without rerunning app assertions or skipping them.
+subprocess.run(['xcrun','simctl','install',udid,'build/simulator/Daybreak.app'],check=True,timeout=180)
 subprocess.run(['xcrun','simctl','launch',udid,'com.soum91.daybreak','--smoke-test'],check=True,timeout=60)
 time.sleep(18)
 container = Path(run('xcrun','simctl','get_app_container',udid,'com.soum91.daybreak','data'))
