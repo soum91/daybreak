@@ -2,7 +2,7 @@ name: Build Daybreak IPA
 on:
   push:
     branches: [main]
-    paths-ignore: [repo.json]
+    paths-ignore: [repo.json, CHANGELOG.md]
   workflow_dispatch:
 permissions:
   contents: write
