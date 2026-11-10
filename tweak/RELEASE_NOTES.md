@@ -1,4 +1,6 @@
-## Daybreak Dopamine 0.2.0 (preview, physical test pending)
+## Daybreak Dopamine 0.2.1 (metadata privacy update, physical test pending)
+
+- Replaced personally identifying author and maintainer fields with the public project handle `soum91` in the package, Sileo index, and release generator. No runtime logic was changed in this packaging-only update.
 
 - Added a Theos rootless `arm64/arm64e` SpringBoard tweak, separate from the original Daybreak and XCTest Runner app targets.
 - Ported the earliest-before-noon calendar planner, preparation minutes, fallback wake time, and after-noon guard into a background engine.

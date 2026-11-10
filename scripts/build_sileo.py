@@ -63,7 +63,7 @@ def main():
     items = ("Packages", "Packages.gz", "Packages.bz2")
     release = ["Origin: Daybreak", "Label: Daybreak Dopamine", "Suite: stable",
                "Codename: daybreak", "Version: 1.0", "Architectures: iphoneos-arm64",
-               "Components: main", "Description: Soumen's rootless Daybreak tweak for iOS 16",
+               "Components: main", "Description: Rootless Daybreak tweak for iOS 16",
                "MD5Sum:"]
     for item in items:
         blob = (OUT / item).read_bytes()

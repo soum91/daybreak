@@ -5,12 +5,12 @@ Codename: daybreak
 Version: 1.0
 Architectures: iphoneos-arm64
 Components: main
-Description: Soumen's rootless Daybreak tweak for iOS 16
+Description: Rootless Daybreak tweak for iOS 16
 MD5Sum:
- ea6ec492c8a83ceca35468f54eb27d33 666 Packages
- f9929e77630b4293da5ed94a6960dd3f 463 Packages.gz
- 2edf6f2c00695ad3431562bdc3da109d 524 Packages.bz2
+ 115df19d80e1eb1b935e6f1f1b9bf3a9 644 Packages
+ 24d766ea03349ff2ce4004917fe12171 450 Packages.gz
+ 0e3e2df0d9c8b8f626d2678368bdb6bd 511 Packages.bz2
 SHA256:
- d520aaf138eb510fe2bb2f1eae491b263f8bbbd82d24391239b88a8b07a9834f 666 Packages
- e75dab9118309527bc4b2dfcc9c28263926f349fd16fc1a399fe1fd3af0375fc 463 Packages.gz
- 4ea0e83521f982b6da575ea0808e1a330208fde1fd6225ea6816a1e5c0a98b55 524 Packages.bz2
+ deb3e2b1394878b864335d4dad8210f6b1654d91cc3cd7c1a9f757133c75d47b 644 Packages
+ cac4ce6ef995c149d45ba55f94c19e5b06e577fbc291ee8378ead7a35957955b 450 Packages.gz
+ 35aed459866427ecfb106b9028d69110bf8550313c9645acfbe0a96398e87ed6 511 Packages.bz2

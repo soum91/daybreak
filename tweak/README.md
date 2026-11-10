@@ -27,7 +27,7 @@ a Windows host, or a separate companion application.
 
 This is a **device-verification preview**. iOS 16.1.1 SpringBoard EventKit access,
 the async MobileTimer update permission, and propagation to Health's next-only
-Sleep override are not yet verified on Soumen's phone. The tweak fails closed if
+Sleep override are not yet verified on the test device. The tweak fails closed if
 an interface or permission is absent. It does not manufacture a regular alarm,
 patch the Clock database, alter the underlying recurring Sleep schedule, or claim
 that an update worked without reading it back. Automatic operation is OFF by default.
