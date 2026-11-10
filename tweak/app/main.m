@@ -107,15 +107,16 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     self.preview=[self label:@"Tap Preview to calculate tomorrow's wake time." size:17 bold:NO];
     [self.stack addArrangedSubview:[self card:@[
         [self label:@"Tomorrow's wake" size:21 bold:YES],self.preview,
-        [self button:@"Preview tomorrow" action:@selector(previewTapped) emphasized:NO],
-        [self button:@"Apply to Sleep | Wake Up" action:@selector(applyTapped) emphasized:YES]
+        [self button:@"Preview tomorrow" action:@selector(previewTapped) emphasized:YES],
+        [self label:@"Apple Health schedule sync check: open the Health app on this iPhone 13, wait ten seconds, return here and tap Refresh status. The Health-side check is read-only. Do not assume its Sleep wake alarm synchronizes to the iPhone 17 or Watch yet." size:13 bold:NO]
     ]]];
     self.leadField=[self field:@"leadMinutes" fallback:60];
     self.fallbackHourField=[self field:@"fallbackHour" fallback:8];
     self.fallbackMinuteField=[self field:@"fallbackMinute" fallback:30];
     self.runHourField=[self field:@"runHour" fallback:18];
-    self.autoSwitch=[UISwitch new];self.autoSwitch.on=[DBValue(@"automaticEnabled") boolValue];
+    self.autoSwitch=[UISwitch new];self.autoSwitch.on=NO;self.autoSwitch.enabled=NO;
     self.enableSwitch=[UISwitch new];self.enableSwitch.on=[DBValue(@"enableNextSleepAlarm") boolValue];
+    self.enableSwitch.enabled=NO;
     [self.stack addArrangedSubview:[self card:@[
         [self label:@"Wake planner settings" size:21 bold:YES],
         [self fieldRow:@"Preparation minutes (0–720)" field:self.leadField],
@@ -123,8 +124,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self fieldRow:@"Fallback minute (0–59)" field:self.fallbackMinuteField],
         [self fieldRow:@"Evening run hour (12–23)" field:self.runHourField],
         [self button:@"Choose calendar" action:@selector(chooseCalendar) emphasized:NO],
-        [self switchRow:@"Automatic evening updates" control:self.autoSwitch],
-        [self switchRow:@"Enable next Sleep alarm" control:self.enableSwitch]
+        [self switchRow:@"Native schedule automation (pending verification)" control:self.autoSwitch]
     ]]];
     self.status=[self label:@"No diagnostic yet." size:13 bold:NO];
     self.status.textColor=[UIColor colorWithWhite:1 alpha:.78];
@@ -141,7 +141,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO],
         [self label:@"Full selectable report" size:15 bold:YES],self.details
     ]]];
-    UILabel *note=[self label:@"Only an existing next-only Sleep override can be changed. Recurring Health sleep schedules and ordinary alarms are never edited. Automatic updates remain off until enabled." size:13 bold:NO];
+    UILabel *note=[self label:@"This diagnostic build does not write native Health Sleep schedules or ordinary alarms. The earlier local-only MobileTimer override path is disabled because it cannot establish iCloud/Watch synchronization. Existing wake alarms are unchanged." size:13 bold:NO];
     note.textColor=[UIColor colorWithWhite:1 alpha:.65];[self.stack addArrangedSubview:note];
     [self refreshStatus];
 }
@@ -154,8 +154,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)saveSwitches {
-    DBWrite(@"automaticEnabled",@(self.autoSwitch.on));
-    DBWrite(@"enableNextSleepAlarm",@(self.enableSwitch.on));
+    DBWrite(@"automaticEnabled",@NO);
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)alert:(NSString *)title message:(NSString *)message {
@@ -236,7 +235,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 }
 - (void)refreshStatus {
     NSDictionary *state=[NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.status.plist"]?:@{};
-    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never"];
+    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@\nHealth schedule probe: %@ (%@)",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never",state[@"healthProbe"]?:@"not run: open Apple Health first",state[@"healthProbeUpdated"]?:@"never"];
     self.details.text=[self report];
 }
 - (NSString *)report {

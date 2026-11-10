@@ -56,6 +56,8 @@ jobs:
           test "$(dpkg-deb -f "$deb" Architecture)" = iphoneos-arm64
           dpkg-deb --contents "$deb" | grep -q '/Applications/Daybreak.app/Daybreak'
           dpkg-deb --contents "$deb" | grep -q '/PreferenceBundles/DaybreakPrefs.bundle/DaybreakPrefs'
+          dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakHealthProbe.dylib'
+          dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakHealthProbe.plist'
           dpkg-deb --ctrl-tarfile "$deb" | tar -tf - | grep -q './postinst'
           cp "$deb" "$GITHUB_WORKSPACE/daybreak-tweak.deb"
       - name: Assemble verified Sileo source

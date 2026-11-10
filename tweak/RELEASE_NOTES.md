@@ -1,4 +1,13 @@
-## Daybreak Dopamine 0.2.3 (Home Screen app + Settings repair)
+## Daybreak Dopamine 0.2.4 (Apple Health schedule investigation)
+
+- Added a separate **read-only HealthKit probe dylib** targeted at Apple's Health app on iOS 16.1.1. It checks for the private `HKSleepSchedule` class and `HKObjectType.sleepScheduleType`, then makes a one-sample read query and returns only fixed outcome codes. No schedule times, sleep data, calendar contents, or identifiers are exported.
+- SpringBoard now records `healthProbe` / `healthProbeUpdated` in the Daybreak diagnostic. Open Apple Health, wait ten seconds, then use **Refresh status** in Daybreak. `schedule_found` indicates the Health process could read an `HKSleepSchedule` sample; it **does not** prove an editable schedule or iCloud synchronization.
+- Disabled the previous MobileTimer next-only local override writer and automatic evening writes. That path could not establish that the iPhone 17 and paired Watch would share the same Sleep alarm. Existing Sleep schedules and alarms are left untouched by this update.
+- Updated the Home Screen and Settings descriptions to differentiate verified device-local previewing from unverified native Health Sleep schedule editing. Installed version is 0.2.4 (5).
+
+**Not yet working:** Automatically changing the native Sleep schedule, iCloud propagation to another iPhone, and the Watch's alarm. No device has been available to verify Health process injection, read-query authorization, or synchronization. The probe is a diagnostic for the next development step, not a claimed alarm fix.
+
+## Earlier 0.2.3 changes (Home Screen app + Settings repair)
 
 - Fixed the blank Settings pane by using the real `Preferences/PSListController.h`
   superclass and its inherited `_specifiers` list, not a shadowed property.

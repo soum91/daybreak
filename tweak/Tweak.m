@@ -95,12 +95,16 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     NSLog(@"[Daybreak] %@: %@",code,message);
 }
 - (void)started {
-    [self report:@"SpringBoard engine loaded. Auto-update requires explicit enable in Settings." code:@"STARTED"];
+    DBStore(@"automaticEnabled",@NO); // Retire persisted legacy device-only automation.
+    [self report:@"SpringBoard engine loaded. Native Health Sleep schedule writes are disabled; open Health for a read-only schedule probe." code:@"STARTED"];
     self.timer=[NSTimer scheduledTimerWithTimeInterval:300 target:self selector:@selector(tick)
                                               userInfo:nil repeats:YES];
     [self performSelector:@selector(tick) withObject:nil afterDelay:25];
 }
 - (void)tick {
+    // The old per-device override cannot be considered a synced Sleep schedule.
+    // Do not schedule background writes while the native pathway is being tested.
+    if(!DBBoolean(@"nativeScheduleWriteVerified")) return;
     if(!DBBoolean(@"automaticEnabled") || self.busy) return;
     NSInteger hour=DBInteger(@"runHour",18,12,23);
     NSDateComponents *c=[NSCalendar.currentCalendar components:NSCalendarUnitHour fromDate:NSDate.date];
@@ -112,6 +116,13 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
 }
 - (void)runPreviewOnly:(BOOL)preview manual:(BOOL)manual {
     if(self.busy) { [self report:@"Another plan/update is in progress." code:@"BUSY"]; return; }
+    // Never send the historical device-local MobileTimer write as if it were
+    // an iCloud-synchronized Health Sleep schedule update. Native schedule
+    // support must be proven separately using the read-only Health probe.
+    if(!preview) {
+        [self report:@"Native Health Sleep schedule editing and Watch propagation are not yet verified. No alarm changed; legacy local-only write disabled." code:@"NATIVE_SCHEDULE_PENDING"];
+        return;
+    }
     NSCalendar *calendar=NSCalendar.currentCalendar;
     NSDate *now=NSDate.date;
     NSDate *tomorrow=[calendar dateByAddingUnit:NSCalendarUnitDay value:1
@@ -278,7 +289,14 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
     (void)center;(void)observer;(void)object;(void)userInfo;
     NSString *notification=(__bridge NSString *)name;
     dispatch_async(dispatch_get_main_queue(),^{
-        if([notification isEqualToString:@"com.soum91.daybreak.preview"]) [DBShared runPreviewOnly:YES manual:YES];
+        NSString *healthPrefix=@"com.soum91.daybreak.healthprobe.";
+        if([notification hasPrefix:healthPrefix]) {
+            NSString *result=[notification substringFromIndex:healthPrefix.length];
+            DBShared.status[@"healthProbe"]=result;
+            DBShared.status[@"healthProbeUpdated"]=NSDate.date;
+            [DBShared report:[NSString stringWithFormat:@"Health app read-only schedule probe: %@. No Sleep data or alarm was modified.",result] code:@"HEALTH_PROBE"];
+        }
+        else if([notification isEqualToString:@"com.soum91.daybreak.preview"]) [DBShared runPreviewOnly:YES manual:YES];
         else if([notification isEqualToString:@"com.soum91.daybreak.apply"]) [DBShared runPreviewOnly:NO manual:YES];
         else [DBShared tick];
     });
@@ -294,6 +312,10 @@ __attribute__((constructor)) static void DBLaunch(void) {
             CFNotificationCenterRef center=CFNotificationCenterGetDarwinNotifyCenter();
             for(NSString *notification in @[@"com.soum91.daybreak.preferences",@"com.soum91.daybreak.preview",@"com.soum91.daybreak.apply"])
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)notification,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
+            for(NSString *result in @[@"class_missing",@"type_missing",@"type_invalid",@"type_available",@"query_error",@"query_empty",@"schedule_found",@"unexpected_sample",@"query_unavailable",@"probe_exception"]) {
+                NSString *name=[@"com.soum91.daybreak.healthprobe." stringByAppendingString:result];
+                CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)name,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
+            }
             [DBShared started];
         });
     }

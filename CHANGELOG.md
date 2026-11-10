@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.4 (2026-11-10)
+
+- Added `tweak/DBHealthProbe.m` and a Health-app-only injection filter to check private iOS HealthKit `HKSleepSchedule` and `sleepScheduleType` support. The query reads at most one schedule sample and reports only fixed presence/error codes to SpringBoard, with no patient data and no database edits.
+- Updated `tweak/Tweak.m` to record the Health probe outcome in exported diagnostics and disable the legacy MobileTimer override writer and unattended writes. This avoids incorrectly presenting per-device alarm mutation as iCloud-synchronized Sleep schedule control.
+- Updated the Daybreak app and Settings messaging, package control, and visible installed version/build to 0.2.4 (5). Existing Sleep alarms are not modified by this update.
+- Physical verification remains outstanding: whether the Health app loads the probe, whether its private schedule query succeeds, whether native schedule modification can be safely implemented, and whether schedule updates synchronize to the iPhone 17 and paired Watch. No such functionality is claimed in this build.
+
 ## [tweak-v0.2.3] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.2
