@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.20] - 2026-11-10
+
+## Verified changes since v0.1.19
+
+- feat: add Daybreak iOS 16 Dopamine tweak and Sileo build pipeline ([`1f5aaeaa`](https://github.com/soum91/daybreak/commit/1f5aaeaab9461242e4db3351e8d4ea28c4fa1d37); `.github/workflows/build.yml`, `.github/workflows/tweak.yml`, `scripts/build_sileo.py`, and 16 more)
+- Update Daybreak source to build 19 ([`d04172fb`](https://github.com/soum91/daybreak/commit/d04172fb99383d66892c39413c59799b83d09bb9); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.19...v0.1.20)
+
 ## [tweak-v0.2.0] - 2026-11-10
 
 ## Verified changes since v0.1.19
