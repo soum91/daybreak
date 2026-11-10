@@ -1,4 +1,4 @@
-## Daybreak Dopamine 0.2.2 (Home Screen app + Settings repair)
+## Daybreak Dopamine 0.2.3 (Home Screen app + Settings repair)
 
 - Fixed the blank Settings pane by using the real `Preferences/PSListController.h`
   superclass and its inherited `_specifiers` list, not a shadowed property.
@@ -10,7 +10,9 @@
   calendar plan to the SpringBoard tweak. The engine continues to require an
   exact next-only Sleep override and verified MobileTimer read-back.
 - Added Home Screen icon generation and CI checks that the compiled `.deb`
-  contains both the app executable and PreferenceLoader bundle.
+  contains both the app executable and PreferenceLoader bundle. Corrected the
+  Theos maintainer script location to `layout/DEBIAN/postinst`, so rootless
+  `uicache` registration is actually included in the package; CI now checks it.
 - Package author and maintainer metadata use only `soum91`, without a personal
   legal name.
 

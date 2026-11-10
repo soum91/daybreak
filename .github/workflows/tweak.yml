@@ -56,6 +56,7 @@ jobs:
           test "$(dpkg-deb -f "$deb" Architecture)" = iphoneos-arm64
           dpkg-deb --contents "$deb" | grep -q '/Applications/Daybreak.app/Daybreak'
           dpkg-deb --contents "$deb" | grep -q '/PreferenceBundles/DaybreakPrefs.bundle/DaybreakPrefs'
+          dpkg-deb --ctrl-tarfile "$deb" | tar -tf - | grep -q './postinst'
           cp "$deb" "$GITHUB_WORKSPACE/daybreak-tweak.deb"
       - name: Assemble verified Sileo source
         run: |
@@ -72,7 +73,17 @@ jobs:
             sileo/Packages*
             sileo/Release
           retention-days: 90
-      - name: Publish exact package release
+      - name: Commit matching Sileo index and package
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sileo/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish verified Daybreak tweak package and Sileo index [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Publish exact package release if permitted
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -90,12 +101,3 @@ jobs:
           if gh release view 'tweak-v0.2.0' >/dev/null 2>&1; then
             gh release delete 'tweak-v0.2.0' --yes --cleanup-tag
           fi
-      - name: Commit matching Sileo index and package
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add sileo/
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Publish verified Daybreak tweak package and Sileo index [skip ci]"
-          git pull --rebase origin main
-          git push origin HEAD:main

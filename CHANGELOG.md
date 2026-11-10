@@ -39,7 +39,7 @@ Validation: required installed-version preflight and existing CI compilation/cac
 
 Source commit: https://github.com/soum91/daybreak/commit/5750bfe5bcb58885d17927770a49163c781f6c6d
 
-## Daybreak Dopamine tweak 0.2.2 (2026-11-10)
+## Daybreak Dopamine tweak 0.2.3 (2026-11-10)
 
 - Fixed the blank Settings preference controller by inheriting and populating
   the actual `PSListController` specifier storage. The former declaration
@@ -52,7 +52,10 @@ Source commit: https://github.com/soum91/daybreak/commit/5750bfe5bcb58885d179277
   SpringBoard engine for manual updates, preserving the next-only Sleep override
   safety checks and requiring fresh alarm read-back.
 - Updated tweak CI to generate Home Screen icons and verify that the `.deb`
-  includes the app and preference bundle. Device behavior awaits testing.
+  includes the app and preference bundle, as well as the `postinst` rootless
+  icon registration script from `layout/DEBIAN`. A 0.2.2 build revealed that
+  keeping that script in the project root did not include it in the `.deb`.
+  Device behavior awaits testing.
 
 ## [v0.1.20] - 2026-11-10
 

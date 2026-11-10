@@ -1,5 +1,6 @@
 #!/bin/sh
 # Register the bundled Home Screen app on Dopamine's rootless bootstrap.
+# Theos packages maintainer scripts from layout/DEBIAN, not project root.
 if [ -x /var/jb/usr/bin/uicache ]; then
   /var/jb/usr/bin/uicache -p /var/jb/Applications/Daybreak.app || true
 elif command -v uicache >/dev/null 2>&1; then

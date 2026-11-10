@@ -62,7 +62,7 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
    and install **Daybreak (Dopamine)** after the build has published its index.
    Restart SpringBoard if Sileo does not automatically respring.
 2. Open the new **Daybreak Home Screen app**. Verify that the version is
-   **0.2.2 (3)**. Check Settings → Daybreak too: the switches and rows must be
+   **0.2.3 (4)**. Check Settings → Daybreak too: the switches and rows must be
    visible, rather than an empty black screen. Leave automation off.
 3. In the app, grant Calendar access, choose the calendar and tap **Preview
    tomorrow**. The preview should show a calculated time and event count.
