@@ -12,9 +12,9 @@
       "buildVersion": "17",
       "versionDate": "2026-11-10T04:20:08Z",
       "versionDescription": "Added a direct read-only MobileTimer SystemGroup check before the inode scan, plus SQLite table definitions. Alarm changing through this route is not implemented.",
-      "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
-      "iconURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.png",
-      "localizedDescription": "Plan wake times from tomorrow\u2019s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.",
+      "downloadURL": "https://github.com/soum91/daybreak/releases/download/v0.1.17/Daybreak.ipa",
+      "iconURL": "https://github.com/soum91/daybreak/releases/download/v0.1.17/Daybreak.png",
+      "localizedDescription": "Plan wake times from tomorrow’s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.",
       "size": 211424,
       "minOSVersion": "17.0",
       "versions": [
@@ -22,7 +22,7 @@
           "version": "0.1.17",
           "buildVersion": "17",
           "date": "2026-11-10T04:20:08Z",
-          "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.ipa",
+          "downloadURL": "https://github.com/soum91/daybreak/releases/download/v0.1.17/Daybreak.ipa",
           "size": 211424,
           "minOSVersion": "17.0"
         }
@@ -35,8 +35,8 @@
       "version": "0.1.17",
       "buildVersion": "17",
       "versionDate": "2026-11-10T04:20:08Z",
-      "downloadURL": "https://github.com/soum91/daybreak/releases/latest/download/DaybreakRunner.ipa",
-      "iconURL": "https://github.com/soum91/daybreak/releases/latest/download/Daybreak.png",
+      "downloadURL": "https://github.com/soum91/daybreak/releases/download/v0.1.17/DaybreakRunner.ipa",
+      "iconURL": "https://github.com/soum91/daybreak/releases/download/v0.1.17/Daybreak.png",
       "size": 141013,
       "minOSVersion": "17.0",
       "localizedDescription": "Experimental on-device Siri runner. Requires DEVELOPMENT signing with get-task-allow, a signed nested .xctest bundle, a mounted developer image and UI Automation approval. Distribution signing is insufficient. Calendar planning is configured in Daybreak.",
