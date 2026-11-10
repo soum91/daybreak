@@ -1,4 +1,10 @@
-## Daybreak Dopamine 0.2.6 (experimental native Health Sleep override)
+## Daybreak Dopamine 0.2.7 (native Sleep trial, Sileo metadata correction)
+
+- Corrected the Sileo package Description: it now accurately identifies the experimental one-time native Health Sleep writer rather than wrongly claiming the whole package is read-only.
+- The Health-process writer now performs its synchronous read-back on a separate background queue after the native save callback to avoid callback-queue reentrancy or deadlock.
+- Added an explicit `native_request_missing` diagnostic when Health cannot see the one-shot request. iPhone 17 / Watch synchronization and iOS 16 private API compatibility are still unverified.
+
+## Earlier 0.2.6 changes (experimental native Health Sleep override)
 
 - The user's iOS 16.1.1 device reported `HEALTH_PROBE schedule_found`; this confirms the Health-app read-only `HKSleepSchedule` path was accessible.
 - Added `DBNativeSleep.m` to the Health-app-only tweak. It dynamically loads Apple's private `Sleep.framework`, checks `HKSPSleepStore` and model selectors, and attempts a **one-time native Sleep override**, not an ordinary alarm or MobileTimer override.

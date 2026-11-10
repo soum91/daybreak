@@ -1,5 +1,11 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.7 (2026-11-10)
+
+- Corrected `tweak/control`'s package description so Sileo no longer says Sleep schedule writes are disabled. It now describes the experimental, explicit one-time native Health override and makes the unverified sync limitation clear.
+- Moved `HKSPSleepStore` read-back onto a separate background queue after the asynchronous save callback, preventing synchronous Sleep XPC calls from re-entering their own completion queue.
+- Added `native_request_missing` result code for an unavailable shared one-time request. Updated package and both visible installed targets to 0.2.7 (8). Actual on-device write and Watch delivery remain to be verified.
+
 ## Daybreak Dopamine tweak 0.2.6 (2026-11-10)
 
 - Implemented a guarded, one-time native Sleep schedule override in `tweak/DBNativeSleep.m`, injected only into Apple's Health app. This uses the system `HKSPSleepStore` path, not ordinary alarms, AlarmKit, or direct Health database writes.

@@ -322,7 +322,7 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)notification,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             for(NSString *result in @[@"class_missing",@"type_missing",@"type_invalid",@"type_available",@"query_error",@"query_empty",@"schedule_found",@"unexpected_sample",@"query_unavailable",@"probe_exception",
                 @"native_framework_missing",@"native_api_missing",@"native_model_unavailable",@"native_schedule_unavailable",
-                @"native_api_ready",@"native_probe_exception",@"native_request_invalid",@"native_next_day_mismatch",
+                @"native_api_ready",@"native_probe_exception",@"native_request_missing",@"native_request_invalid",@"native_next_day_mismatch",
                 @"native_override_api_missing",@"native_override_unavailable",@"native_alarm_off",
                 @"native_components_missing",@"native_components_invalid",@"native_occurrence_invalid",
                 @"native_repeating_guard",@"native_preview_mismatch",@"native_request_consumed",

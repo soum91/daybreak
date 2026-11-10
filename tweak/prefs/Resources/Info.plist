@@ -6,7 +6,7 @@
   <key>CFBundleExecutable</key><string>DaybreakPrefs</string>
   <key>CFBundlePackageType</key><string>BNDL</string>
   <key>NSPrincipalClass</key><string>DBRootListController</string>
-  <key>CFBundleShortVersionString</key><string>0.2.6</string>
-  <key>CFBundleVersion</key><string>7</string>
+  <key>CFBundleShortVersionString</key><string>0.2.7</string>
+  <key>CFBundleVersion</key><string>8</string>
   <key>NSCalendarsUsageDescription</key><string>Select the calendar that Daybreak uses to plan tomorrow's wake time.</string>
 </dict></plist>

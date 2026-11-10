@@ -125,7 +125,10 @@ void DBNativeSleepCheck(void) {
 static BOOL DBNSProcessOneRequest(void) {
     @try {
         NSDictionary *request = DBNSPreference(@"nativeSleepRequest");
-        if (![request isKindOfClass:NSDictionary.class]) return NO;
+        if (![request isKindOfClass:NSDictionary.class]) {
+            DBNSStatus("native_request_missing");
+            return NO;
+        }
         NSDate *wake = request[@"wake"];
         NSDate *morning = request[@"morning"];
         NSDate *created = request[@"created"];
@@ -227,26 +230,33 @@ static BOOL DBNSProcessOneRequest(void) {
         ((void (*)(id, SEL, id, id))objc_msgSend)(store,
             NSSelectorFromString(@"saveCurrentSleepSchedule:completion:"), newSchedule,
             ^(BOOL success) {
-                @try {
-                    if (!success) {
-                        DBNSStatus("native_save_rejected");
-                    } else {
-                        NSError *readError = nil;
-                        id fresh = DBNSCallWithError(store, @"currentSleepScheduleWithError:", &readError);
-                        id freshOverride = DBNSGet(fresh, @"overrideOccurrence");
-                        NSDateComponents *readBack = DBNSGet(freshOverride, @"wakeUpComponents");
-                        if (!readError && [readBack isKindOfClass:NSDateComponents.class] &&
-                            readBack.hour == wanted.hour && readBack.minute == wanted.minute) {
-                            DBNSStatus("native_readback_match");
-                        } else {
-                            DBNSStatus("native_readback_unverified");
+                // Keep synchronous XPC read-back away from Sleep's completion
+                // callback queue to avoid re-entrancy or serial-queue deadlock.
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+                    @autoreleasepool {
+                        @try {
+                            if (!success) {
+                                DBNSStatus("native_save_rejected");
+                            } else {
+                                NSError *readError = nil;
+                                id fresh = DBNSCallWithError(store, @"currentSleepScheduleWithError:", &readError);
+                                id freshOverride = DBNSGet(fresh, @"overrideOccurrence");
+                                NSDateComponents *readBack = DBNSGet(freshOverride, @"wakeUpComponents");
+                                if (!readError && [readBack isKindOfClass:NSDateComponents.class] &&
+                                    readBack.hour == wanted.hour && readBack.minute == wanted.minute) {
+                                    DBNSStatus("native_readback_match");
+                                } else {
+                                    DBNSStatus("native_readback_unverified");
+                                }
+                            }
+                        } @catch (NSException *exception) {
+                            NSLog(@"[Daybreak] Native Sleep read-back exception: %@", exception.reason);
+                            DBNSStatus("native_readback_exception");
+                        } @finally {
+                            @synchronized (DBNSPrefs) { DBNSInFlight = NO; }
                         }
                     }
-                } @catch (NSException *exception) {
-                    NSLog(@"[Daybreak] Native Sleep read-back exception: %@", exception.reason);
-                    DBNSStatus("native_readback_exception");
-                }
-                @synchronized (DBNSPrefs) { DBNSInFlight = NO; }
+                });
             });
         return YES;
     } @catch (NSException *exception) {

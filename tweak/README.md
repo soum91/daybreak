@@ -6,7 +6,7 @@ The Sileo package installs **both** a native Daybreak Home Screen control app an
 a Settings → Daybreak pane. Neither needs Siri, XCTest, a development image,
 or a Windows host. The existing iOS 17+ app remains a separate historical target.
 
-**0.2.6 adds an experimental one-time native Sleep schedule writer.**
+**0.2.7 contains an experimental one-time native Sleep schedule writer.**
 Device diagnostics on iPhone 13 confirmed `HEALTH_PROBE schedule_found` in
 Apple Health on iOS 16.1.1. The writer uses the private `HKSPSleepStore`
 service rather than Health database edits, ordinary alarms, AlarmKit, or the
@@ -63,7 +63,7 @@ The build workflow performs an actual `arm64/arm64e` compile and creates a
 1. Add `https://raw.githubusercontent.com/soum91/daybreak/main/sileo/` to Sileo
    and install **Daybreak (Dopamine)** after the build has published its index.
    Restart SpringBoard if Sileo does not automatically respring.
-2. Open the **Daybreak Home Screen app**. Verify **0.2.6 (7)** in the app or
+2. Open the **Daybreak Home Screen app**. Verify **0.2.7 (8)** in the app or
    Settings. In particular, inspect that the installed tweak was updated.
 3. In the app, grant Calendar access, choose the calendar and tap **Preview
    tomorrow**. The preview should show a calculated time and event count.
