@@ -1,5 +1,16 @@
 # Changelog
 
+## [tweak-v0.2.1] - 2026-11-10
+
+## Verified changes since v0.1.20
+
+- Remove personal identity from Daybreak tweak and Sileo packages ([`f8c6256d`](https://github.com/soum91/daybreak/commit/f8c6256d3b4965aacdaa329ceac5a2668080fcf8); `scripts/build_sileo.py`, `sileo/Packages`, `sileo/Packages.bz2`, and 7 more)
+- docs: make Dopamine tweak the primary Daybreak path ([`ca37c261`](https://github.com/soum91/daybreak/commit/ca37c261877cc5639b5cc766511e3f78c6e7a955); `README.md`)
+- Update Daybreak source to build 20 ([`53818286`](https://github.com/soum91/daybreak/commit/538182866003e156b5dff705025b8048b7400cf3); `repo.json`)
+- fix: dynamically resolve Settings Preferences host in rootless bundle ([`cae94861`](https://github.com/soum91/daybreak/commit/cae948618db1543d175c1977994f25b78c9682b3); `tweak/prefs/Makefile`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.20...tweak-v0.2.1)
+
 ## 0.1.21
 
 Clock storage discovery no longer stops after finding the Clock app preferences container. Build 18 found only default sound/timer preferences on the user's device; that does not establish that daemon/shared storage was searched completely.
