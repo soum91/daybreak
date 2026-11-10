@@ -83,6 +83,13 @@ jobs:
           else
             gh release create "$tag" --target "$GITHUB_SHA" --title "Daybreak Dopamine ${version} (device verification pending)" --notes-file tweak/RELEASE_NOTES.md daybreak-tweak.deb
           fi
+      - name: Remove superseded package release containing private attribution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view 'tweak-v0.2.0' >/dev/null 2>&1; then
+            gh release delete 'tweak-v0.2.0' --yes --cleanup-tag
+          fi
       - name: Commit matching Sileo index and package
         run: |
           git config user.name 'github-actions[bot]'
