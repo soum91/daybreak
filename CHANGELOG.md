@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.1.18] - 2026-11-10
+
+## Verified changes since v0.1.17
+
+- Continue Clock scan ranges automatically ([`5d9db671`](https://github.com/soum91/daybreak/commit/5d9db6713c00ab787ea0bfb5e1c27898c41463e1); `.github/workflows/build.yml`, `App/ClockAccess.h`, `App/ClockAccess.m`, and 3 more)
+- Pin Daybreak feed downloads to verified v0.1.17 assets ([`bd43e19e`](https://github.com/soum91/daybreak/commit/bd43e19e712d6ce4ab2a16cc258a05d0fa301183); `repo.json`)
+- Update Daybreak source to build 17 ([`6f434271`](https://github.com/soum91/daybreak/commit/6f4342710c14d3e5015c158038038633de053723); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.17...v0.1.18)
+
 ## 0.1.18
 
 Added a direct read-only check of the named MobileTimer SystemGroup before inode discovery. The previous version reached Clock's app preferences on a user's iOS 27.0.1 phone but found only default sound/timer settings; it did not locate live alarms.
