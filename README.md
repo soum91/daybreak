@@ -1,5 +1,28 @@
 # Daybreak
 
+## Dopamine pivot: rootless tweak for iOS 16.1.1
+
+Daybreak now also ships as a **Dopamine rootless tweak** for the iPhone 13 Pro Max
+on iOS 16.1.1. The tweak runs an on-device evening calendar planner from
+SpringBoard, with a Settings panel, diagnostic exports, and a separate Sileo
+package release. It does **not** require the Daybreak app, Siri, XCTest,
+developer mode, a computer, or a companion service.
+
+- [Tweak plan, exact safeguards and first-phone test](tweak/README.md)
+- [Dopamine tweak release (`.deb`)](https://github.com/soum91/daybreak/releases/tag/tweak-v0.2.0)
+- Sileo flat repository: `https://raw.githubusercontent.com/soum91/daybreak/main/sileo/`
+
+The `0.2.0` build is a **device-verification preview**. It only updates an
+already-existing next-only Sleep | Wake Up override, never a regular alarm or
+recurring Health sleep schedule. SpringBoard calendar permission, private
+MobileTimer write permission, and Clock-visible persistence still need testing
+on the actual phone. Automatic updates are disabled until you turn them on.
+
+The original iOS 17+ standalone app and its XCTest Runner remain below as
+historical development paths. Their runtime limitations are unchanged.
+
+---
+
 Calendar-based wake planning for the actual Clock → Sleep | Wake Up alarm, using an on-device XCTest Siri runner.
 
 ## Current behavior
