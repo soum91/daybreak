@@ -19,7 +19,6 @@ static id DBGet(id obj, NSString *name) {
     if(!signature || signature.numberOfArguments!=2 || signature.methodReturnType[0]!='@') return nil;
     return ((id(*)(id,SEL))objc_msgSend)(obj,selector);
 }
-static id DBObjectID(id alarm) { return DBGet(alarm,@"alarmID"); }
 static BOOL DBNumber(id obj, NSString *name, unsigned long long *out) {
     SEL selector=NSSelectorFromString(name);
     NSMethodSignature *signature=[obj methodSignatureForSelector:selector];
@@ -31,15 +30,6 @@ static BOOL DBNumber(id obj, NSString *name, unsigned long long *out) {
     unsigned long long value=0; [invocation getReturnValue:&value];
     if(out) *out=value;
     return YES;
-}
-static BOOL DBSetNumber(id obj, NSString *name, unsigned long long value) {
-    SEL selector=NSSelectorFromString(name);
-    NSMethodSignature *signature=[obj methodSignatureForSelector:selector];
-    if(!signature || signature.numberOfArguments!=3 || signature.methodReturnType[0]!='v' ||
-       !strchr("BcCsSiIlLqQ",[signature getArgumentTypeAtIndex:2][0])) return NO;
-    NSInvocation *invocation=[NSInvocation invocationWithMethodSignature:signature];
-    invocation.target=obj; invocation.selector=selector;
-    [invocation setArgument:&value atIndex:2]; [invocation invoke]; return YES;
 }
 static id DBObjectCall(id obj, NSString *name, id argument) {
     SEL selector=NSSelectorFromString(name);
