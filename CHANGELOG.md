@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.19] - 2026-11-10
+
+## Verified changes since v0.1.18
+
+- Continue Clock discovery beyond preferences and remember identified storage ([`1ed16f96`](https://github.com/soum91/daybreak/commit/1ed16f964a7ee54069c14cede6fdf4180ef5f5b9); `App/ClockAccess.m`, `App/main.m`, `release-notes/current.md`, and 1 more)
+- Update Daybreak source to build 18 ([`3c80198c`](https://github.com/soum91/daybreak/commit/3c80198c25f40a157173252c63256379a23a88cb); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.18...v0.1.19)
+
 ## 0.1.19
 
 Clock storage discovery no longer stops after finding the Clock app preferences container. Build 18 found only default sound/timer preferences on the user's device; that does not establish that daemon/shared storage was searched completely.
