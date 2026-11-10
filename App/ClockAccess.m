@@ -169,10 +169,12 @@ done:
         [self line:[NSString stringWithFormat:@"  SQLite immutable base-file schema open rc=%d (WAL excluded)",rc]];
         if(rc==SQLITE_OK) {
             sqlite3_busy_timeout(db,200); sqlite3_stmt *stmt=NULL;
-            rc=sqlite3_prepare_v2(db,"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name LIMIT 80",-1,&stmt,NULL);
+            rc=sqlite3_prepare_v2(db,"SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name LIMIT 80",-1,&stmt,NULL);
             if(rc==SQLITE_OK) while(sqlite3_step(stmt)==SQLITE_ROW) {
                 const unsigned char *name=sqlite3_column_text(stmt,0);
                 if(name)[self line:[NSString stringWithFormat:@"  table: %s",name]];
+                const unsigned char *definition=sqlite3_column_text(stmt,1);
+                if(definition)[self line:[NSString stringWithFormat:@"  definition: %s",definition]];
             }
             [self line:[NSString stringWithFormat:@"  schema query rc=%d; alarm rows were not read",rc]];
             if(stmt)sqlite3_finalize(stmt);
@@ -223,6 +225,22 @@ done:
     }
     [self release:handle];
     if(ClockID(identifier)) [self inspectContainer:path identifier:identifier];
+}
+// iOS MobileTimer names this SystemGroup directly. Its parent may reject
+// listing while a child still grants access. Try only this fixed Clock path.
+- (void)inspectNamedClockGroup {
+    NSString *identifier=@"systemgroup.com.apple.mobiletimerd";
+    NSString *path=[@"/private/var/containers/Shared/SystemGroup" stringByAppendingPathComponent:identifier];
+    int64_t handle=[self grant:path];
+    struct stat st={0}; int rc=lstat(path.fileSystemRepresentation,&st);
+    BOOL directory=rc==0 && S_ISDIR(st.st_mode);
+    int error=directory?0:(rc==0?ENOTDIR:errno);
+    [self line:[NSString stringWithFormat:@"Named Clock SystemGroup: token=%lld, directory=%@, errno=%d",handle,directory?@"yes":@"no",error]];
+    [self release:handle];
+    if(directory) {
+        [self.seen addObject:path];
+        [self inspectContainer:path identifier:[identifier stringByAppendingString:@" (fixed MobileTimer path)"]];
+    }
 }
 - (void)queryCandidates {
     void *mgr=dlopen("/usr/lib/system/libsystem_containermanager.dylib",RTLD_NOW|RTLD_LOCAL);if(!mgr)return;
@@ -285,6 +303,7 @@ done:
     if(!self.group){[self line:@"STOP -1: No signed, accessible App Group. Re-sign with an App Group supported by the provisioning profile. An entitlement added to an IPA alone is insufficient."];return self.report;}
     [self line:[NSString stringWithFormat:@"Signed App Group: %@",self.group]];
     self.deadline=[NSDate dateWithTimeIntervalSinceNow:25];
+    [self inspectNamedClockGroup];
     [self queryCandidates];
     for(NSString *root in Roots()) {
         if(self.deadline.timeIntervalSinceNow<=0)break;

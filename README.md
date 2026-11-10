@@ -56,3 +56,5 @@ Container discovery first uses MCM metadata/listing, then a resumable inode scan
 Use **Copy complete report** (with read-back verification), **Share report**, or **Save report to Files**. Full text is selectable. No report is uploaded automatically. Physical-device filesystem access and diagnostic export are unverified until tested on a signed phone. No unattended or live-alarm-changing capability is claimed.
 
 See THIRD_PARTY_NOTICES.md and LICENSE for GPL-3.0-or-later source attribution and distribution terms.
+
+The probe now tries the fixed MobileTimer SystemGroup child (`systemgroup.com.apple.mobiletimerd`) directly before scanning, because access to its parent listing can fail independently of child access. This path appears in MobileTimer's iOS firmware strings. A readable child and database schema remain phone tests, not assumed successes. SQLite table definitions are included without alarm row values.
