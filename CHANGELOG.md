@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.1.15] - 2026-11-10
+
+## Verified changes since v0.1.12
+
+- Prevent release metadata updates from triggering another build ([`a57b7c19`](https://github.com/soum91/daybreak/commit/a57b7c196aa18873c8cce8190093f4e561fe6022); `.github/workflows/build.yml`)
+- Add worse_query Clock storage experiment without XCTest ([`276f1e53`](https://github.com/soum91/daybreak/commit/276f1e533d57e8266b8675935ff30ddd75d91531); `.github/workflows/build.yml`, `App/ClockAccess.h`, `App/ClockAccess.m`, and 11 more)
+- Enforce visible installed version/build across app releases ([`9146e933`](https://github.com/soum91/daybreak/commit/9146e933ec6043caf196e85c726d554d5f72ca2f); `.github/workflows/build.yml`, `.github/workflows/version-ui.yml`, `scripts/check_version_ui.py`, and 1 more)
+- Update Daybreak source to build 12 ([`b6dc3cb1`](https://github.com/soum91/daybreak/commit/b6dc3cb1ba8653e58218f4237a0ecee74a261f13); `repo.json`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.12...v0.1.15)
+
 ## 0.1.15
 
 Added a Clock filesystem access experiment using worse_query. This is a read-only investigation of a possible replacement for XCTest, not a working replacement for changing alarms.
