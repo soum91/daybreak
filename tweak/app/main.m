@@ -110,13 +110,16 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self label:@"Tomorrow's wake" size:21 bold:YES],self.preview,
         [self button:@"Preview tomorrow" action:@selector(previewTapped) emphasized:YES],
         [self button:@"Apply once to native Sleep" action:@selector(applyTapped) emphasized:NO],
-        [self label:@"After applying, open Apple Health on this iPhone 13 to let its native Sleep service process the one-time request. Return here and tap Refresh status. Then verify Health/Clock on iPhone 17 and the Watch separately. This is a first-device trial, not yet automatic." size:13 bold:NO]
+        [self label:@"Automatic updates are enabled below. The separate Apply button is optional for a one-time update. If the background Sleep service rejects an automatic write, opening Apple Health can process the pending request. The Watch must still be checked separately." size:13 bold:NO]
     ]]];
     self.leadField=[self field:@"leadMinutes" fallback:60];
     self.fallbackHourField=[self field:@"fallbackHour" fallback:8];
     self.fallbackMinuteField=[self field:@"fallbackMinute" fallback:30];
     self.runHourField=[self field:@"runHour" fallback:18];
-    self.autoSwitch=[UISwitch new];self.autoSwitch.on=NO;self.autoSwitch.enabled=NO;
+    self.autoSwitch=[UISwitch new];
+    id storedAuto=DBValue(@"automaticEnabled");
+    self.autoSwitch.on=[storedAuto respondsToSelector:@selector(boolValue)]?[storedAuto boolValue]:YES;
+    self.autoSwitch.enabled=YES;
     self.enableSwitch=[UISwitch new];self.enableSwitch.on=[DBValue(@"enableNextSleepAlarm") boolValue];
     self.enableSwitch.enabled=NO;
     [self.stack addArrangedSubview:[self card:@[
@@ -126,7 +129,9 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self fieldRow:@"Fallback minute (0–59)" field:self.fallbackMinuteField],
         [self fieldRow:@"Evening run hour (12–23)" field:self.runHourField],
         [self button:@"Choose calendar" action:@selector(chooseCalendar) emphasized:NO],
-        [self switchRow:@"Native schedule automation (pending verification)" control:self.autoSwitch]
+        [self switchRow:@"Automatic native Sleep schedule" control:self.autoSwitch],
+        [self button:@"Run automation now" action:@selector(runAutomationNow) emphasized:NO],
+        [self label:@"The iPhone 13 plans tomorrow's wake at the configured evening hour, then requests an Apple native one-day Sleep override. It does not create an ordinary alarm." size:13 bold:NO]
     ]]];
     self.status=[self label:@"No diagnostic yet." size:13 bold:NO];
     self.status.textColor=[UIColor colorWithWhite:1 alpha:.78];
@@ -143,7 +148,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self button:@"Save diagnostic to Files" action:@selector(saveReport) emphasized:NO],
         [self label:@"Full selectable report" size:15 bold:YES],self.details
     ]]];
-    UILabel *note=[self label:@"Daybreak's one-time native Sleep writer uses a guarded Apple Health schedule override. It never creates an ordinary alarm or changes repeating days. Native save success does not prove that the paired Watch received the update, or that this iPhone will remain silent. Automatic updates remain disabled until real-device verification." size:13 bold:NO];
+    UILabel *note=[self label:@"Daybreak now attempts native Sleep updates automatically in SpringBoard. Repeating weekdays are preserved and ordinary alarms are not created. Calendar access in SpringBoard, native Sleep writes and Watch-only ringing still depend on real-device permissions and must not be assumed successful from a build alone. Keep a backup alarm." size:13 bold:NO];
     note.textColor=[UIColor colorWithWhite:1 alpha:.65];[self.stack addArrangedSubview:note];
     [self refreshStatus];
 }
@@ -156,8 +161,13 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)saveSwitches {
-    DBWrite(@"automaticEnabled",@NO);
+    DBWrite(@"automaticEnabled",@(self.autoSwitch.isOn));
     notify_post("com.soum91.daybreak.preferences");
+}
+- (void)runAutomationNow {
+    [self saveFields];
+    notify_post("com.soum91.daybreak.forceautomation");
+    [self alert:@"Automatic update requested" message:@"SpringBoard will calculate tomorrow's wake and submit it through the native Sleep writer. Refresh status after a few seconds. If the native framework cannot write in background, the pending request may be processed when Apple Health opens."];
 }
 - (void)alert:(NSString *)title message:(NSString *)message {
     UIAlertController *a=[UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];

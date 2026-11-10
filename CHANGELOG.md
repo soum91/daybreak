@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.8 (2026-11-10)
+
+- Enabled native Sleep automation in `tweak/Tweak.m`: SpringBoard no longer disables `automaticEnabled` on launch or rejects scheduled writes before planning. It now attempts one calendar-driven native Sleep override every evening (18:00 default), retaining the no-repeat-per-morning guard.
+- Compiled the existing guarded native Sleep writer into the SpringBoard tweak in addition to the Health-only helper. Automatic requests are sent directly to the private Sleep service from SpringBoard, while Health can process an unconsumed request on foreground.
+- Enabled the automatic switch in Daybreak's Home Screen app and Settings and added a **Run automation now** action. Updated package description and installed metadata to 0.2.8 (9).
+- **Not yet physically verified:** Calendar authorization in SpringBoard, background Sleep XPC write authorization, cross-iPhone or Watch propagation, and Watch-only wake delivery. An unsuccessful native write does not create a fallback ordinary alarm.
+
 ## Daybreak Dopamine tweak 0.2.7 (2026-11-10)
 
 - Corrected `tweak/control`'s package description so Sileo no longer says Sleep schedule writes are disabled. It now describes the experimental, explicit one-time native Health override and makes the unverified sync limitation clear.

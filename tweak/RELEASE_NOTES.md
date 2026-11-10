@@ -1,3 +1,11 @@
+## Daybreak Dopamine 0.2.8 (automatic native Sleep requests)
+
+- Removed the legacy `automaticEnabled` reset and the early-return that blocked all scheduled native Sleep writes. Existing installs migrate once to automatic mode ON, but the user can switch it off afterward.
+- SpringBoard now calculates tomorrow's calendar wake at the configured evening hour (18:00 default), passes a one-shot request to the native `HKSPSleepStore` writer, and records fixed success/failure status codes. It does not submit an ordinary alarm or call the former device-local MobileTimer update path.
+- The Daybreak Home Screen app and Settings pane now expose an enabled **Automatic native Sleep schedule** switch. Added **Run automation now** to trigger the background plan immediately without manually using Preview/Apply.
+- The Health-app writer remains available for processing a pending request if the direct SpringBoard Sleep-service call cannot access it.
+- **Physical limitations unverified:** whether SpringBoard can access Calendar events and the private Sleep XPC service without user interaction, whether the native update persists on iOS 16.1.1, and whether iCloud propagates to the iPhone 17 / paired Watch. Watch-only ringing is not implemented or claimed.
+
 ## Daybreak Dopamine 0.2.7 (native Sleep trial, Sileo metadata correction)
 
 - Corrected the Sileo package Description: it now accurately identifies the experimental one-time native Health Sleep writer rather than wrongly claiming the whole package is read-only.

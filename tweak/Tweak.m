@@ -5,6 +5,7 @@
 #import <dlfcn.h>
 #import <string.h>
 #import "DBPlanner.h"
+#import "DBNativeSleep.h"
 
 // All private MobileTimer calls are selected and signature-checked at runtime.
 // A missing interface, denied service or ambiguous Sleep target fails closed.
@@ -95,16 +96,21 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     NSLog(@"[Daybreak] %@: %@",code,message);
 }
 - (void)started {
-    DBStore(@"automaticEnabled",@NO); // Retire persisted legacy device-only automation.
-    [self report:@"SpringBoard engine loaded. Native Health Sleep schedule writes are disabled; open Health for a read-only schedule probe." code:@"STARTED"];
+    // Migrate only once: the previous diagnostic release forcibly disabled
+    // automaticEnabled on each respring. Respect subsequent manual changes.
+    if(!DBBoolean(@"nativeAutomationMigrated")) {
+        DBStore(@"automaticEnabled",@YES);
+        DBStore(@"nativeAutomationMigrated",@YES);
+    }
+    [self report:DBBoolean(@"automaticEnabled")?
+        @"Native Sleep automation enabled. The iPhone 13 will calculate tomorrow's calendar wake at the configured evening hour and attempt a one-day Sleep override through the system Sleep framework.":
+        @"Native Sleep automation paused by user. Calendar preview and one-time Apply are available."
+          code:@"STARTED"];
     self.timer=[NSTimer scheduledTimerWithTimeInterval:300 target:self selector:@selector(tick)
                                               userInfo:nil repeats:YES];
     [self performSelector:@selector(tick) withObject:nil afterDelay:25];
 }
 - (void)tick {
-    // The old per-device override cannot be considered a synced Sleep schedule.
-    // Do not schedule background writes while the native pathway is being tested.
-    if(!DBBoolean(@"nativeScheduleWriteVerified")) return;
     if(!DBBoolean(@"automaticEnabled") || self.busy) return;
     NSInteger hour=DBInteger(@"runHour",18,12,23);
     NSDateComponents *c=[NSCalendar.currentCalendar components:NSCalendarUnitHour fromDate:NSDate.date];
@@ -116,13 +122,6 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
 }
 - (void)runPreviewOnly:(BOOL)preview manual:(BOOL)manual {
     if(self.busy) { [self report:@"Another plan/update is in progress." code:@"BUSY"]; return; }
-    // Never send the historical device-local MobileTimer write as if it were
-    // an iCloud-synchronized Health Sleep schedule update. Native schedule
-    // support must be proven separately using the read-only Health probe.
-    if(!preview) {
-        [self report:@"Native Health Sleep schedule editing and Watch propagation are not yet verified. No alarm changed; legacy local-only write disabled." code:@"NATIVE_SCHEDULE_PENDING"];
-        return;
-    }
     NSCalendar *calendar=NSCalendar.currentCalendar;
     NSDate *now=NSDate.date;
     NSDate *tomorrow=[calendar dateByAddingUnit:NSCalendarUnitDay value:1
@@ -245,41 +244,17 @@ static NSString *DBDayKey(NSCalendar *calendar,NSDate *date) {
     }];
 }
 - (void)applyWake:(NSDate *)wake morning:(NSDate *)morning manual:(BOOL)manual {
-    [self findNextSleepForMorning:morning completion:^(id original,NSError *error) {
-        if(error) {[self finish:[NSString stringWithFormat:@"Cannot target next-only Sleep override: %@",error.localizedDescription] code:@"TARGET_UNAVAILABLE"];return;}
-        @try {
-            id alarmID=DBGet(original,@"alarmID");
-            id candidate=[original mutableCopy];
-            NSDateComponents *time=[NSCalendar.currentCalendar components:NSCalendarUnitHour|NSCalendarUnitMinute fromDate:wake];
-            unsigned long long originalEnabled=0;
-            if(!alarmID || !candidate || !DBNumber(original,@"isEnabled",&originalEnabled) ||
-               !DBSetNumber(candidate,@"setHour:",(unsigned long long)time.hour) ||
-               !DBSetNumber(candidate,@"setMinute:",(unsigned long long)time.minute) ||
-               (DBBoolean(@"enableNextSleepAlarm") && !DBSetNumber(candidate,@"setEnabled:",YES))) {
-                [self finish:@"Target has incompatible identifiers or setter signatures. No update sent." code:@"INCOMPATIBLE_RUNTIME"];return;
-            }
-            self.status[@"originalHour"]=[NSNumber numberWithUnsignedLongLong:({unsigned long long v=0;DBNumber(original,@"hour",&v);v;})];
-            self.status[@"originalMinute"]=[NSNumber numberWithUnsignedLongLong:({unsigned long long v=0;DBNumber(original,@"minute",&v);v;})];
-            [self report:@"Submitted updateAlarm for matching next-only Sleep override. Awaiting callback and fresh read-back." code:@"UPDATE_SENT"];
-            [self observe:DBObjectCall(self.alarmManager,@"updateAlarm:",candidate) completion:^(id result,NSError *updateError) {
-                (void)result;
-                if(updateError) {[self finish:[NSString stringWithFormat:@"MobileTimer rejected or timed out: %@",updateError.localizedDescription] code:@"UPDATE_UNVERIFIED"];return;}
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,2*NSEC_PER_SEC),dispatch_get_main_queue(),^{
-                    [self findNextSleepForMorning:morning completion:^(id fresh,NSError *readError) {
-                        unsigned long long actualH=999,actualM=999,enabled=0;
-                        BOOL matches=!readError && [DBObjectID(fresh) isEqual:alarmID] &&
-                            DBNumber(fresh,@"hour",&actualH) && DBNumber(fresh,@"minute",&actualM) &&
-                            DBNumber(fresh,@"isEnabled",&enabled) && actualH==(unsigned long long)time.hour &&
-                            actualM==(unsigned long long)time.minute &&
-                            (!DBBoolean(@"enableNextSleepAlarm") || enabled);
-                        if(matches) {DBStore(@"lastSuccessMorning",DBDayKey(NSCalendar.currentCalendar,morning));
-                            [self finish:[NSString stringWithFormat:@"Fresh MobileTimer read-back matches the requested next-only Sleep time (enabled=%@). Verify it visually in Clock on this device.",enabled?@"yes":@"no"] code:@"READBACK_MATCH"];}
-                        else [self finish:[NSString stringWithFormat:@"No matching fresh Sleep read-back (error %@, H=%llu, M=%llu). Check Clock; outcome unverified.",readError.localizedDescription?:@"none",actualH,actualM] code:@"READBACK_MISMATCH"];
-                    }];
-                });
-            }];
-        } @catch(NSException *exception) {[self finish:[NSString stringWithFormat:@"Private MobileTimer exception: %@",exception.reason] code:@"RUNTIME_EXCEPTION"];}
-    }];
+    // The entire automated and manual path now calls Apple's native Sleep
+    // framework. Never write a device-only MobileTimer alarm.
+    DBStore(@"nativeSleepRequest",@{
+        @"wake":wake, @"morning":morning, @"created":NSDate.date,
+        @"identifier":NSUUID.UUID.UUIDString,
+        @"origin":manual?@"manual":@"automatic"
+    });
+    [self report:[NSString stringWithFormat:@"%@ native Sleep request queued for %@. SpringBoard is submitting it directly; Apple Health can retry the pending request when opened if this process lacks Sleep service access.",
+                  manual?@"Manual":@"Automatic",wake] code:@"NATIVE_AUTO_SUBMITTED"];
+    DBNativeSleepApplyIfRequested();
+    self.busy=NO;
 }
 @end
 
@@ -298,12 +273,17 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
             }
             DBShared.status[@"healthProbe"]=result;
             DBShared.status[@"healthProbeUpdated"]=NSDate.date;
+            if([result isEqualToString:@"native_readback_match"]) {
+                NSString *morning=DBShared.status[@"morning"];
+                if([morning isKindOfClass:NSString.class]) DBStore(@"lastSuccessMorning",morning);
+            }
             if([result hasPrefix:@"native_"]) {
                 [DBShared report:[NSString stringWithFormat:@"Health native schedule operation: %@. iPhone 17 and Watch sync remain unverified until inspected.",result] code:@"NATIVE_HEALTH"];
             } else {
                 [DBShared report:[NSString stringWithFormat:@"Health app read-only schedule probe: %@. No Sleep data or alarm was modified by this probe.",result] code:@"HEALTH_PROBE"];
             }
         }
+        else if([notification isEqualToString:@"com.soum91.daybreak.forceautomation"]) [DBShared runPreviewOnly:NO manual:YES];
         else if([notification isEqualToString:@"com.soum91.daybreak.preview"]) [DBShared runPreviewOnly:YES manual:YES];
         else if([notification isEqualToString:@"com.soum91.daybreak.apply"]) [DBShared runPreviewOnly:NO manual:YES];
         else [DBShared tick];
@@ -318,7 +298,7 @@ __attribute__((constructor)) static void DBLaunch(void) {
         dispatch_async(dispatch_get_main_queue(),^{
             DBShared=[DBEngine new];
             CFNotificationCenterRef center=CFNotificationCenterGetDarwinNotifyCenter();
-            for(NSString *notification in @[@"com.soum91.daybreak.preferences",@"com.soum91.daybreak.preview",@"com.soum91.daybreak.apply"])
+            for(NSString *notification in @[@"com.soum91.daybreak.preferences",@"com.soum91.daybreak.preview",@"com.soum91.daybreak.apply",@"com.soum91.daybreak.forceautomation"])
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)notification,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             for(NSString *result in @[@"class_missing",@"type_missing",@"type_invalid",@"type_available",@"query_error",@"query_empty",@"schedule_found",@"unexpected_sample",@"query_unavailable",@"probe_exception",
                 @"native_framework_missing",@"native_api_missing",@"native_model_unavailable",@"native_schedule_unavailable",

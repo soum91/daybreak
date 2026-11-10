@@ -41,8 +41,8 @@
 }
 - (void)applyNow:(id)specifier {
     (void)specifier;
-    [self info:@"Use the Daybreak app"
-       message:@"Open the Daybreak Home Screen app, Preview tomorrow, and tap Apply once to native Sleep. Then open Apple Health on this iPhone 13. The old per-device MobileTimer write is still disabled in Settings."];
+    [self info:@"Automatic Sleep updates"
+       message:@"With automatic mode on, Daybreak attempts tomorrow's one-day native Sleep override every evening without an Apply step. Open the Daybreak Home Screen app and tap Run automation now if you want an immediate attempt. Check diagnostics to confirm a native read-back; iPhone 17 and Apple Watch sync still require verification. No ordinary MobileTimer alarm is created."];
 }
 - (void)chooseCalendar:(id)specifier {
     (void)specifier;
