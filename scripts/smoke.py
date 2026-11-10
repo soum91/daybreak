@@ -20,6 +20,7 @@ container = Path(run('xcrun','simctl','get_app_container',udid,'com.soum91.daybr
 report = (container/'Documents'/'Daybreak-diagnostic.txt').read_text()
 assert 'App ready.' in report, report
 assert 'DAYBREAK_PLANNER_PASS' in report, report
+assert 'Simulator: exploit disabled' in report, report
 assert 'INUpdateAlarmIntent methods:' in report, report
 # Checking a running process catches crashes during private-framework inspection.
 processes = run('xcrun','simctl','spawn',udid,'launchctl','list')
@@ -27,3 +28,4 @@ assert 'com.soum91.daybreak' in processes, 'App exited during inspection'
 Path('dist/simulator-report.txt').write_text(report)
 subprocess.run(['xcrun','simctl','io',udid,'screenshot','dist/simulator.png'],check=True,timeout=30)
 print('Launch + read-only runtime inspection passed. Real iOS permissions remain untested.')
+

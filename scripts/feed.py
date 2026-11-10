@@ -9,13 +9,13 @@ base = 'https://github.com/soum91/daybreak/releases/latest/download/'
 ipa = Path('dist/Daybreak.ipa')
 feed = {
     'name': 'Daybreak', 'identifier': 'com.soum91.daybreak.source',
-    'subtitle': 'Calendar wake planning with an on-device Siri runner',
+    'subtitle': 'Calendar wake planning and Clock access experiment',
     'website': 'https://github.com/soum91/daybreak',
     'apps': [{
         'name': 'Daybreak', 'bundleIdentifier': 'com.soum91.daybreak',
         'developerName': 'soum91', 'version': version, 'buildVersion': str(number),
         'versionDate': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'versionDescription': 'Calendar-based planning and evening URL trigger included. Locked-screen execution remains unverified.',
+        'versionDescription': 'Added a read-only worse_query Clock storage experiment without XCTest and complete diagnostic exports. Alarm changing through this route is not implemented.',
         'downloadURL': base + 'Daybreak.ipa', 'iconURL': base + 'Daybreak.png',
         'localizedDescription': 'Plan wake times from tomorrow’s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.',
         'size': ipa.stat().st_size if ipa.exists() else 0, 'minOSVersion': '17.0',
@@ -39,3 +39,4 @@ if runner.exists():
     })
 Path('dist').mkdir(exist_ok=True)
 Path('dist/repo.json').write_text(json.dumps(feed, indent=2)+'\n')
+

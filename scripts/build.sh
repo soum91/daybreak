@@ -19,13 +19,14 @@ sdk_path="$(xcrun --sdk "$sdk" --show-sdk-path)"
 xcrun --sdk "$sdk" clang -target "$target" -isysroot "$sdk_path" \
   -fobjc-arc -fblocks -O2 -g -Wall -Wextra -Wno-unused-parameter \
   -Wno-deprecated-declarations -IApp \
-  -framework UIKit -framework Foundation -framework Intents -framework IntentsUI -framework EventKit \
-  App/main.m App/Probe.m -o "$app/Daybreak"
+  -framework UIKit -framework Foundation -framework Intents -framework IntentsUI -framework EventKit -framework Security -lsqlite3 \
+  App/main.m App/Probe.m App/ClockAccess.m -o "$app/Daybreak"
 APP_PATH="$app" APP_VERSION="$version" BUILD_NUMBER="$build_number" SDK_NAME="$sdk" python3 scripts/info.py
 swift scripts/Icon.swift "$app"
-codesign --force --sign - "$app"
+codesign --force --sign - --entitlements App/Daybreak.entitlements "$app"
 if [[ "$mode" != "simulator" ]]; then
   (cd build/device && /usr/bin/zip -qry ../../dist/Daybreak.ipa Payload)
   shasum -a 256 dist/Daybreak.ipa > dist/SHA256SUMS.txt
   python3 scripts/validate_ipa.py dist/Daybreak.ipa
 fi
+

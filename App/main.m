@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <IntentsUI/IntentsUI.h>
 #import "Probe.h"
+#import "ClockAccess.h"
 #import <EventKit/EventKit.h>
 
 static NSDictionary *WakePlan(NSCalendar *calendar, NSDate *now, NSArray<NSDictionary *> *events, NSInteger lead, NSInteger fallbackHour, NSInteger fallbackMinute) {
@@ -37,6 +38,9 @@ static void CheckWakePlanner(void) {
 @property(nonatomic) UISwitch *automationSwitch;
 @property(nonatomic) NSDictionary *plan;
 @property(nonatomic) BOOL sending;
+@property(nonatomic) BOOL inspectingClock;
+@property(nonatomic) UIButton *clockAccessButton;
+@property(nonatomic) UILabel *clockAccessStatus;
 @property(nonatomic) UILabel *statusLabel;
 @property(nonatomic) UIDatePicker *picker;
 @property(nonatomic) UITextView *log;
@@ -84,6 +88,11 @@ static void CheckWakePlanner(void) {
     intro.textColor=UIColor.secondaryLabelColor; [stack addArrangedSubview:intro];
     self.statusLabel=[self label:@"Ready to inspect" size:17 weight:UIFontWeightSemibold];
     self.statusLabel.accessibilityIdentifier=@"probeStatus"; [stack addArrangedSubview:self.statusLabel];
+    [stack addArrangedSubview:[self label:@"Clock access without XCTest" size:20 weight:UIFontWeightBold]];
+    self.clockAccessButton=[self button:@"Test Clock filesystem access" action:@selector(inspectClockFiles) primary:YES];
+    [stack addArrangedSubview:self.clockAccessButton];
+    self.clockAccessStatus=[self label:@"Experimental worse_query access test. Reads identified Clock storage only. This does not change an alarm or enable unattended execution. Requires a signed App Group; no Runner is needed for this test." size:14 weight:UIFontWeightRegular];
+    [stack addArrangedSubview:self.clockAccessStatus];
     self.events=[EKEventStore new];
     [stack addArrangedSubview:[self label:@"Tomorrow’s calendar" size:20 weight:UIFontWeightBold]];
     [stack addArrangedSubview:[self button:@"Choose calendars" action:@selector(chooseCalendars) primary:NO]];
@@ -115,14 +124,56 @@ static void CheckWakePlanner(void) {
     self.log=[UITextView new]; self.log.editable=NO; self.log.font=[UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
     self.log.backgroundColor=UIColor.secondarySystemBackgroundColor; self.log.layer.cornerRadius=14;
     self.log.textContainerInset=UIEdgeInsetsMake(12,8,12,8); [self.log.heightAnchor constraintEqualToConstant:290].active=YES;
+    self.log.selectable=YES;
     [stack addArrangedSubview:self.log];
+    [stack addArrangedSubview:[self button:@"Copy complete report" action:@selector(copyReport) primary:NO]];
+    [stack addArrangedSubview:[self button:@"Share report" action:@selector(share) primary:NO]];
+    [stack addArrangedSubview:[self button:@"Save report to Files" action:@selector(saveReport) primary:NO]];
     self.probe=[Probe new]; __weak typeof(self) weak=self;
     self.probe.changed=^{[weak refresh];}; [self refresh];
     [self.probe note:@"App ready. No alarm changes occur on launch."];
-    if([NSProcessInfo.processInfo.arguments containsObject:@"--smoke-test"]){ CheckWakePlanner(); [self.probe note:@"DAYBREAK_PLANNER_PASS"]; [self scan]; }
+    if([NSProcessInfo.processInfo.arguments containsObject:@"--smoke-test"]){ CheckWakePlanner(); [self.probe note:@"DAYBREAK_PLANNER_PASS"]; [self scan];
+        [ClockAccess inspect:^(NSString *report){[self.probe note:report];}]; }
+}
+- (void)inspectClockFiles {
+    if(self.inspectingClock)return;
+    self.inspectingClock=YES;self.clockAccessButton.enabled=NO;
+    self.clockAccessStatus.text=@"Inspecting Clock storage. No XCTest session is started. Keep Daybreak open; discovery has a roughly 25-second work budget. Repeated tests continue a partial inode scan.";
+    [ClockAccess inspect:^(NSString *report){
+        self.inspectingClock=NO;self.clockAccessButton.enabled=YES;
+        self.clockAccessStatus.text=@"Access test finished. See the report below. Alarm changing and unattended operation remain unverified.";
+        [self.probe note:report];
+    }];
+}
+- (NSString *)exportReport {
+    NSString *text=self.probe.report?:@"No diagnostic report available.";
+    // The local runner session is an authorization credential. Keep it out of
+    // displayed/exported reports as well as clipboard, Share and Files.
+    NSRegularExpression *re=[NSRegularExpression regularExpressionWithPattern:@"(?im)(session\\s*=\\s*)[^;\\n]+" options:0 error:nil];
+    return [re stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0,text.length) withTemplate:@"$1[redacted]"];
+}
+- (void)reportMessage:(NSString *)message {
+    UIAlertController *a=[UIAlertController alertControllerWithTitle:@"Diagnostic report" message:message preferredStyle:UIAlertControllerStyleAlert];
+    [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:a animated:YES completion:nil];
+}
+- (void)copyReport {
+    NSString *report=[self exportReport];UIPasteboard.generalPasteboard.string=report;
+    BOOL verified=[UIPasteboard.generalPasteboard.string isEqualToString:report];
+    [self reportMessage:verified?@"Complete report copied and clipboard contents verified.":@"Clipboard verification failed. Use Share, Save to Files, or select the full report text."];
+}
+- (void)saveReport {
+    NSString *name=[NSString stringWithFormat:@"Daybreak-diagnostic-%@.txt",NSUUID.UUID.UUIDString];
+    NSURL *file=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:name]];
+    NSError *error=nil;
+    if(![[self exportReport] writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error]) {
+        [self reportMessage:[NSString stringWithFormat:@"Could not prepare report file: %@",error.localizedDescription]];return;
+    }
+    UIDocumentPickerViewController *picker=[[UIDocumentPickerViewController alloc] initForExportingURLs:@[file] asCopy:YES];
+    [self presentViewController:picker animated:YES completion:nil];
 }
 - (void)refresh {
-    self.statusLabel.text=self.probe.status; self.log.text=self.probe.report;
+    self.statusLabel.text=self.probe.status; self.log.text=[self exportReport];
     self.scanButton.enabled=!self.probe.busy;
     self.siriButton.enabled=!self.probe.busy;
     self.writeButton.enabled=!self.probe.busy && self.probe.hasOverride;
@@ -267,7 +318,8 @@ static void CheckWakePlanner(void) {
             else {
                 NSDictionary *result=[NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
                 if([result isKindOfClass:NSDictionary.class]) {
-                    [self.probe note:[NSString stringWithFormat:@"On-device runner report:\n%@",result]];
+                    NSMutableDictionary *sanitized=[result mutableCopy]; [sanitized removeObjectForKey:@"session"];
+                    [self.probe note:[NSString stringWithFormat:@"On-device runner report:\n%@",sanitized]];
                     self.statusLabel.text=[NSString stringWithFormat:@"Runner: %@",result[@"phase"]?:@"unknown"];
                 } else [self.probe note:@"Runner returned an unexpected status response."];
             }
@@ -306,7 +358,7 @@ static void CheckWakePlanner(void) {
     }];
 }
 - (void)share {
-    UIActivityViewController *activity=[[UIActivityViewController alloc] initWithActivityItems:@[self.probe.report] applicationActivities:nil];
+    UIActivityViewController *activity=[[UIActivityViewController alloc] initWithActivityItems:@[[self exportReport]] applicationActivities:nil];
     activity.popoverPresentationController.barButtonItem=self.navigationItem.rightBarButtonItem;
     [self presentViewController:activity animated:YES completion:nil];
 }
@@ -339,3 +391,4 @@ static void CheckWakePlanner(void) {
 int main(int argc,char *argv[]) {
     @autoreleasepool { return UIApplicationMain(argc,argv,nil,NSStringFromClass(DaybreakApp.class)); }
 }
+

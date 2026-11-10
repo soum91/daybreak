@@ -26,6 +26,11 @@ jobs:
             python "$GITHUB_WORKSPACE/scripts/check_version_ui.py"
           fi
 
+      - name: Verify cache preservation and interrupted-swap recovery
+        run: |
+          mkdir -p build
+          xcrun clang -fobjc-arc -fblocks -framework Foundation -lsqlite3 tests/ClockCacheTests.m -o build/clock-cache-tests
+          build/clock-cache-tests
       - name: Build device IPA
         run: bash scripts/build.sh
       - name: Build on-device XCTest runner
@@ -64,24 +69,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="v0.1.${BUILD_NUMBER}"
-          cat > dist/release-notes.md <<'NOTES'
-          Calendar wake-time planning with an on-device Siri runner. Locked-screen execution is unverified.
-
-          Install Daybreak.ipa normally. DaybreakRunner.ipa needs DEVELOPMENT signing (free Apple ID is sufficient), including its nested .xctest bundle. A distribution certificate is insufficient. Mount the developer image with your existing on-device developer tool, open Daybreak Runner and approve UI Automation and Notifications. In Daybreak choose calendars, preview tomorrow’s plan and apply it with Siri. For an evening Time of Day automation, enable daily URL application and use Open URLs with daybreak://calendar-run. The runner must be active; unlock may be required. Verify the exact Sleep | Wake Up entry in Clock, then read/share the runner report.
-
-          CI validates the host IPA and launch, builds the runner, and tests local request delivery, duplicate rejection, busy rejection, session validation and Siri API presence without invoking Siri. CI never changes an alarm. A user report confirms runner startup and local status on iOS 27. Siri execution and the resulting alarm change still require phone verification. See Runner/README.md for requirements.
-          NOTES
+          python3 scripts/prepare_release.py
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber
           else
-            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · On-device Siri runner test" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
+            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · Clock filesystem access experiment" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
           fi
       - name: Update sideloader source version
         run: |
           cp dist/repo.json repo.json
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add repo.json
+          git add repo.json CHANGELOG.md
           git diff --cached --quiet || git commit -m "Update Daybreak source to build ${BUILD_NUMBER}"
           git pull --rebase origin main
           git push origin HEAD:main
+

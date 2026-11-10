@@ -43,3 +43,16 @@ Minimum iOS version is 17. The target phone runs iOS 27. Simulator checks do not
 - Single-time override manager: https://github.com/MTACS/iOS-17-Runtime-Headers/blob/main/PrivateFrameworks/MobileTimer.framework/MTAlarmManager.h
 - Observed asynchronous callbacks: https://github.com/MTACS/iOS-17-Runtime-Headers/blob/main/PrivateFrameworks/NetAppsUtilities.framework/NAFuture.h
 - Historic Siri donation inspected during research: https://www.icloud.com/shortcuts/54661787f1584383bf2c369507222382 (contains `MTUpdateAlarmIntent` with only `alarmID`, no time parameter).
+
+
+## Clock filesystem experiment without XCTest
+
+Tap **Test Clock filesystem access** in Daybreak. This test uses worse_query to check an actually signed App Group and inspect identified Clock containers. It does not start Runner or XCTest, invoke Siri, modify alarm storage, or schedule an alarm. Existing calendar application still uses the separate runner.
+
+The signer must provision an App Group. Daybreak accepts its actual signed accessible group, including a group renamed by a sideloader. A distribution certificate without a matching App Group cannot run the exploit. The entitlement in the unsigned IPA is a signing request, not a grant.
+
+Container discovery first uses MCM metadata/listing, then a resumable inode scan with a roughly 25-second work budget. A missing match after a partial scan is not proof that Clock is inaccessible. Only Clock container metadata and candidate plist/database structure are reported, with alarm values omitted. SQLite is opened immutable to avoid creating sidecars; its schema may omit uncheckpointed WAL changes. The probe temporarily swaps only its own signed group's Caches path, preserves original contents, recovers an interrupted swap, and releases extensions.
+
+Use **Copy complete report** (with read-back verification), **Share report**, or **Save report to Files**. Full text is selectable. No report is uploaded automatically. Physical-device filesystem access and diagnostic export are unverified until tested on a signed phone. No unattended or live-alarm-changing capability is claimed.
+
+See THIRD_PARTY_NOTICES.md and LICENSE for GPL-3.0-or-later source attribution and distribution terms.
