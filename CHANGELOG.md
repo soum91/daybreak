@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.15
 
 Added a Clock filesystem access experiment using worse_query. This is a read-only investigation of a possible replacement for XCTest, not a working replacement for changing alarms.
 
@@ -15,7 +15,5 @@ Validation: release CI compiles device and simulator targets, enforces installed
 
 Source baseline: https://github.com/soum91/daybreak/commit/9191ec10e594bda9cfafb5618d1e45f65f98dbf8
 
-
-This log records verified, release-specific changes. The [Factual release changelog](.github/workflows/release-changelog.yml) GitHub Action adds entries based on the actual commits between published releases. Entries are not fabricated for older versions that have not been audited.
-
+Source commit: https://github.com/soum91/daybreak/commit/a57b7c196aa18873c8cce8190093f4e561fe6022
 
