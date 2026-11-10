@@ -5,7 +5,9 @@ Added a direct read-only check of the named MobileTimer SystemGroup before inode
 - Includes immutable SQLite base-file table definitions, providing column names without reading alarm rows or writing database sidecars. WAL contents remain excluded.
 - Raises the CI Simulator installation timeout from 60 to 180 seconds after a hosted runner timed out during installation. Launch and planner assertions remain mandatory and unchanged.
 
-This continues the filesystem investigation and does not implement alarm mutation, daemon reload, or unattended execution. No XCTest or Siri session is started by the filesystem button. Existing calendar application still uses the separate runner. The direct SystemGroup check and diagnostic exports need physical-device verification; the earlier report verifies only the previous build's access to Clock's app container.
+The Clock scan now continues through saved inode ranges automatically after one tap instead of requiring a tap for every roughly 25-second range. It reports each range, preserves the cursor so an interrupted scan can resume, keeps the screen awake while it runs, and stops when it finds a matching Clock container or reaches the end of the inode range. Keep Daybreak open during the scan; iOS may suspend it if the user switches apps or locks the phone.
+
+This continues the filesystem investigation and does not implement alarm mutation, daemon reload, or unattended execution. No XCTest or Siri session is started by the filesystem button. Existing calendar application still uses the separate runner. Automatic range chaining and the direct SystemGroup check need physical-device verification; previous reports verify only the earlier build's access to Clock's app container and do not establish that the complete scan will find the live alarm store.
 
 Validation: installed-version preflight, device and simulator compilation, cache preservation/recovery tests and existing simulator launch/planner and runner API checks are required by CI. No live alarm change is claimed.
 

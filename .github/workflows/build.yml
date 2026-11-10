@@ -73,7 +73,7 @@ jobs:
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png --clobber
           else
-            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · Clock filesystem access experiment" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
+            gh release create "$tag" --target "$GITHUB_SHA" --latest --title "Daybreak ${tag#v} · Automatic Clock scan" --notes-file dist/release-notes.md dist/Daybreak.ipa dist/DaybreakRunner.ipa dist/Daybreak.png dist/repo.json dist/SHA256SUMS.txt dist/simulator-report.txt dist/simulator.png
           fi
       - name: Update sideloader source version
         run: |
