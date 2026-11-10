@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.1.21] - 2026-11-10
+
+## Verified changes since v0.1.20
+
+- test: cover companion version UI and add selectable full diagnostic ([`5750bfe5`](https://github.com/soum91/daybreak/commit/5750bfe5bcb58885d17927770a49163c781f6c6d); `tweak/RELEASE_NOTES.md`, `tweak/app/main.m`, `version-ui-contract.json`)
+- Remove superseded Daybreak release with private package attribution ([`d8371669`](https://github.com/soum91/daybreak/commit/d83716697427b797698f5516b246893396d685b2); `.github/workflows/tweak.yml`)
+- fix: restore Daybreak Settings controls and add native Home Screen app ([`092f076c`](https://github.com/soum91/daybreak/commit/092f076c5c90c1fa7ef6b60feebd6e8e3324e6e8); `.github/workflows/tweak.yml`, `tweak/Makefile`, `tweak/README.md`, and 10 more)
+- Remove personal identity from Daybreak tweak and Sileo packages ([`f8c6256d`](https://github.com/soum91/daybreak/commit/f8c6256d3b4965aacdaa329ceac5a2668080fcf8); `scripts/build_sileo.py`, `sileo/Packages`, `sileo/Packages.bz2`, and 7 more)
+- docs: make Dopamine tweak the primary Daybreak path ([`ca37c261`](https://github.com/soum91/daybreak/commit/ca37c261877cc5639b5cc766511e3f78c6e7a955); `README.md`)
+- Update Daybreak source to build 20 ([`53818286`](https://github.com/soum91/daybreak/commit/538182866003e156b5dff705025b8048b7400cf3); `repo.json`)
+- fix: dynamically resolve Settings Preferences host in rootless bundle ([`cae94861`](https://github.com/soum91/daybreak/commit/cae948618db1543d175c1977994f25b78c9682b3); `tweak/prefs/Makefile`)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/v0.1.20...v0.1.21)
+
 ## [tweak-v0.2.1] - 2026-11-10
 
 ## Verified changes since v0.1.20
