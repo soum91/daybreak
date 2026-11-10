@@ -1,0 +1,8 @@
+{
+    entry = {
+        bundle = DaybreakPrefs;
+        cell = PSLinkCell;
+        label = Daybreak;
+        isController = 1;
+    };
+}

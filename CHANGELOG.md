@@ -128,3 +128,12 @@ Source baseline: https://github.com/soum91/daybreak/commit/9191ec10e594bda9cfafb
 This log records verified, release-specific changes. The [Factual release changelog](.github/workflows/release-changelog.yml) GitHub Action adds entries based on the actual commits between published releases. Entries are not fabricated for older versions that have not been audited.
 
 
+# Daybreak Dopamine 0.2.0 (tweak preview; device verification pending)
+
+- Introduced the rootless iOS 16 SpringBoard/PreferenceLoader tweak under `tweak/` for the iPhone 13 Pro Max with Dopamine, leaving the iOS 17+ app and Runner intact.
+- Ported tomorrow's earliest timed event before noon, preparation minutes and 08:30 fallback into `tweak/DBPlanner.m`; added deterministic planner tests in `tests/DaybreakTweakPlannerTests.m`.
+- Added guarded MobileTimer next-only Sleep override updates and fresh read-back verification in `tweak/Tweak.m`. An absent or ambiguous next-only override is rejected; no recurring Sleep schedule or regular alarm is changed.
+- Added Settings controls for manual preview/apply, evening automation, calendar selection and diagnostic export in `tweak/prefs/`.
+- Added `.github/workflows/tweak.yml` and `scripts/build_sileo.py` to compile a real rootless `.deb` and publish its matching Sileo flat APT index under `sileo/` only after build checks pass.
+- **Limitation:** Not yet verified on an iOS 16.1.1 Dopamine device. EventKit access, MobileTimer write authorization, next-only override persistence and Sileo installation require a real-device check. Automatic mode is off by default.
+

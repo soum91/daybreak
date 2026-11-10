@@ -1,0 +1,78 @@
+name: Build Daybreak Dopamine tweak and Sileo source
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tweak/**'
+      - 'tests/DaybreakTweakPlannerTests.m'
+      - 'scripts/build_sileo.py'
+      - '.github/workflows/tweak.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: daybreak-tweak-main
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source and run planner tests
+        run: |
+          plutil -lint tweak/prefs/Resources/Info.plist tweak/prefs/Resources/Root.plist
+          plutil -lint tweak/Daybreak.plist tweak/layout/Library/PreferenceLoader/Preferences/Daybreak.plist
+          xcrun clang -fobjc-arc -framework Foundation tweak/DBPlanner.m tests/DaybreakTweakPlannerTests.m -o /tmp/daybreak-planner-tests
+          /tmp/daybreak-planner-tests
+      - name: Prepare Theos and rootless packaging tools
+        run: |
+          brew install ldid dpkg make
+          git clone --depth 1 --recurse-submodules https://github.com/theos/theos.git "$RUNNER_TEMP/theos"
+          echo "THEOS=$RUNNER_TEMP/theos" >> "$GITHUB_ENV"
+          echo "$(brew --prefix)/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
+      - name: Build actual rootless .deb
+        run: |
+          cd tweak
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          deb=$(find packages -maxdepth 1 -name '*.deb' -print -quit)
+          test -n "$deb"
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb" | tee "$GITHUB_WORKSPACE/tweak-package-contents.txt"
+          test "$(dpkg-deb -f "$deb" Architecture)" = iphoneos-arm64
+          cp "$deb" "$GITHUB_WORKSPACE/daybreak-tweak.deb"
+      - name: Assemble verified Sileo source
+        run: |
+          python3 scripts/build_sileo.py daybreak-tweak.deb
+          gzip -t sileo/Packages.gz
+          dpkg-deb -f daybreak-tweak.deb Package Version Architecture
+      - name: Upload package and packaging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Daybreak-Dopamine-${{ github.run_number }}
+          path: |
+            daybreak-tweak.deb
+            tweak-package-contents.txt
+            sileo/Packages*
+            sileo/Release
+          retention-days: 90
+      - name: Publish exact package release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(dpkg-deb -f daybreak-tweak.deb Version)
+          tag="tweak-v${version}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" daybreak-tweak.deb --clobber
+          else
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Daybreak Dopamine ${version} (device verification pending)" --notes-file tweak/RELEASE_NOTES.md daybreak-tweak.deb
+          fi
+      - name: Commit matching Sileo index and package
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sileo/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish verified Daybreak tweak package and Sileo index [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

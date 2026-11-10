@@ -2,7 +2,22 @@ name: Build Daybreak IPA
 on:
   push:
     branches: [main]
-    paths-ignore: [repo.json, CHANGELOG.md]
+    # The Dopamine tweak has an independent .deb/Sileo release pipeline.
+    paths:
+      - 'App/**'
+      - 'Runner/**'
+      - 'scripts/build.sh'
+      - 'scripts/build_runner.sh'
+      - 'scripts/feed.py'
+      - 'scripts/info.py'
+      - 'scripts/package_runner.py'
+      - 'scripts/prepare_release.py'
+      - 'scripts/smoke.py'
+      - 'scripts/validate_ipa.py'
+      - 'scripts/check_version_ui.py'
+      - 'tests/ClockCacheTests.m'
+      - 'version-ui-contract.json'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 permissions:
   contents: write
