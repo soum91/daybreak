@@ -1,0 +1,16 @@
+Package: com.soum91.daybreak.tweak
+Name: Daybreak (Dopamine)
+Description: On-device calendar wake planner for the actual next-only Sleep | Wake Up alarm. Does not create ordinary alarms or alter recurring sleep schedules.
+Maintainer: Soumen Saha Jyoti
+Author: Soumen Saha Jyoti
+Section: Tweaks
+Depends: firmware (>= 16.0), firmware (<< 17.0), mobilesubstrate, preferenceloader
+Conflicts: com.soum91.daybreak.rootful
+Homepage: https://github.com/soum91/daybreak
+Architecture: iphoneos-arm64
+Version: 0.2.0
+Filename: debs/daybreak-tweak.deb
+Size: 27734
+MD5sum: 20e113ddb33782d7878dbd5fe2f5d6f6
+SHA256: 4475b734562b9196af08d55f5f760d4ed49a925f28d1f4653adc288f718b3c4d
+

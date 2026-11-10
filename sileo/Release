@@ -1,0 +1,16 @@
+Origin: Daybreak
+Label: Daybreak Dopamine
+Suite: stable
+Codename: daybreak
+Version: 1.0
+Architectures: iphoneos-arm64
+Components: main
+Description: Soumen's rootless Daybreak tweak for iOS 16
+MD5Sum:
+ ea6ec492c8a83ceca35468f54eb27d33 666 Packages
+ f9929e77630b4293da5ed94a6960dd3f 463 Packages.gz
+ 2edf6f2c00695ad3431562bdc3da109d 524 Packages.bz2
+SHA256:
+ d520aaf138eb510fe2bb2f1eae491b263f8bbbd82d24391239b88a8b07a9834f 666 Packages
+ e75dab9118309527bc4b2dfcc9c28263926f349fd16fc1a399fe1fd3af0375fc 463 Packages.gz
+ 4ea0e83521f982b6da575ea0808e1a330208fde1fd6225ea6816a1e5c0a98b55 524 Packages.bz2
