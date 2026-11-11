@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.10] - 2026-11-11
+
+## Verified changes since tweak-v0.2.9
+
+- feat(daybreak): add read-only iOS 16 native Sleep cloud sync eligibility diagnostics (0.2.10) ([`5a09cd2d`](https://github.com/soum91/daybreak/commit/5a09cd2d40d48b6c0e831db32e7358b8fa5da620); `tweak/DBNativeSleep.m`, `tweak/RELEASE_NOTES.md`, `tweak/Tweak.m`, and 4 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.9...tweak-v0.2.10)
+
 ## [tweak-v0.2.9] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.8
