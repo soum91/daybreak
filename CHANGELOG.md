@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.6] - 2026-11-10
+
+## Verified changes since tweak-v0.2.5
+
+- feat(daybreak): guarded native Health Sleep single-day override trial (0.2.6) ([`5ed13c2c`](https://github.com/soum91/daybreak/commit/5ed13c2cf4d1d73da54574ab723c738de5792023); `tweak/DBHealthProbe.m`, `tweak/DBNativeSleep.h`, `tweak/DBNativeSleep.m`, and 10 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.5...tweak-v0.2.6)
+
 ## [tweak-v0.2.5] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.4
