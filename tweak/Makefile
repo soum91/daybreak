@@ -18,8 +18,8 @@ DaybreakHealthProbe_FILES = DBHealthProbe.m DBNativeSleep.m
 DaybreakHealthProbe_CFLAGS = -fobjc-arc -fblocks -Wall -Wextra
 DaybreakHealthProbe_FRAMEWORKS = Foundation HealthKit UIKit
 
-# Read-only sleepd inspection: observes Apple's real running environment.
-# The third dylib never changes Sleep schedules or forces cloud sync.
+# The sleepd dylib observes the running environment and optionally overrides
+# only _HKFeatureFlags.sleepCloudKitSync. OFF by default; no explicit sync calls.
 DaybreakSleepDaemonProbe_FILES = DBSleepDaemonProbe.xm
 DaybreakSleepDaemonProbe_CFLAGS = -fobjc-arc -fblocks -Wall -Wextra
 DaybreakSleepDaemonProbe_FRAMEWORKS = Foundation

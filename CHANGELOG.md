@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.12 (2026-11-11)
+
+- Added a disabled-by-default, reversible `experimentalSleepCloudSync` control in the Daybreak app and Settings bundle. A Dopamine userspace reboot activates or deactivates it.
+- The existing `sleepd` probe now conditionally overrides only `_HKFeatureFlags.sleepCloudKitSync` at runtime, capturing the original getter value and displaying original vs. effective flags and configured vs. loaded override status. No explicit CloudKit sync call is made.
+- Preserved the working native one-night Sleep writer and hourly planner. Apple Health and daemon cloud preferences are not changed; the operating system may initiate cloud operations when the experimental feature is enabled.
+- Limitations: This could affect iCloud Sleep schedules. Sleep cross-iPhone / Watch delivery, effective cloud upload, and iOS 16 private API behavior are unverified. Disabling and userspace-rebooting rolls back the code override, not any data already synced.
+
 ## [tweak-v0.2.11] - 2026-11-11
 
 ## Verified changes since tweak-v0.2.10

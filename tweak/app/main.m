@@ -27,6 +27,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 @property(nonatomic) UITextField *hourlyEndField;
 @property(nonatomic) UISwitch *autoSwitch;
 @property(nonatomic) UISwitch *notificationsSwitch;
+@property(nonatomic) UISwitch *cloudOverrideSwitch;
 @property(nonatomic) UISwitch *enableSwitch;
 @property(nonatomic) EKEventStore *events;
 @property(nonatomic) BOOL busy;
@@ -127,6 +128,8 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     self.notificationsSwitch=[UISwitch new];
     id notifications=DBValue(@"notificationsEnabled");
     self.notificationsSwitch.on=[notifications respondsToSelector:@selector(boolValue)]?[notifications boolValue]:YES;
+    self.cloudOverrideSwitch=[UISwitch new];
+    self.cloudOverrideSwitch.on=[DBValue(@"experimentalSleepCloudSync") boolValue];
     self.enableSwitch=[UISwitch new];self.enableSwitch.on=[DBValue(@"enableNextSleepAlarm") boolValue];
     self.enableSwitch.enabled=NO;
     [self.stack addArrangedSubview:[self card:@[
@@ -141,6 +144,11 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
         [self switchRow:@"Notifications for updates and errors" control:self.notificationsSwitch],
         [self button:@"Run automation now" action:@selector(runAutomationNow) emphasized:NO],
         [self label:@"Daybreak rechecks tomorrow's calendar once every hour between the selected hours, including changes to existing appointments. Only native one-day Sleep overrides are requested, never ordinary alarms. A successful local Sleep change is not proof of iPhone 17 sync." size:13 bold:NO]
+    ]]];
+    [self.stack addArrangedSubview:[self card:@[
+        [self label:@"Experimental Sleep cloud sync" size:21 bold:YES],
+        [self switchRow:@"Override sleepd cloud feature" control:self.cloudOverrideSwitch],
+        [self label:@"OFF by default. Enabling overrides Apple's private sleepCloudKitSync flag only inside the iPhone 13's Sleep daemon. It can change how Sleep schedules synchronize and may cause conflicts. Turn the switch ON or OFF, then use Dopamine → Reboot Userspace once. Reversing the switch and rebooting userspace restores Apple's behavior. No guarantee of iPhone 17 or Apple Watch delivery; keep a backup alarm." size:13 bold:NO]
     ]]];
     self.status=[self label:@"No diagnostic yet." size:13 bold:NO];
     self.status.textColor=[UIColor colorWithWhite:1 alpha:.78];
@@ -173,14 +181,22 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
     notify_post("com.soum91.daybreak.preferences");
 }
 - (void)saveSwitches {
+    BOOL previousCloud=[DBValue(@"experimentalSleepCloudSync") boolValue];
     DBWrite(@"automaticEnabled",@(self.autoSwitch.isOn));
     DBWrite(@"notificationsEnabled",@(self.notificationsSwitch.isOn));
+    DBWrite(@"experimentalSleepCloudSync",@(self.cloudOverrideSwitch.isOn));
     if(self.notificationsSwitch.isOn) {
         [[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:(UNAuthorizationOptionAlert|UNAuthorizationOptionSound) completionHandler:^(BOOL granted,NSError *error){
             NSLog(@"[Daybreak] Companion notification authorization: %@ %@",granted?@"granted":@"denied",error?:@"");
         }];
     }
     notify_post("com.soum91.daybreak.preferences");
+    if(previousCloud!=self.cloudOverrideSwitch.isOn) {
+        [self alert:@"Cloud experiment saved" message:self.cloudOverrideSwitch.isOn?
+            @"EXPERIMENT ENABLED for the next sleepd startup. Use Dopamine → Reboot Userspace to apply. This can affect iCloud Sleep scheduling; keep a backup alarm and inspect iPhone 17 separately.":
+            @"EXPERIMENT DISABLED for the next sleepd startup. Use Dopamine → Reboot Userspace to restore Apple's original feature behavior."];
+        [self refreshStatus];
+    }
 }
 - (void)runAutomationNow {
     [self saveFields];
@@ -263,7 +279,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 }
 - (void)refreshStatus {
     NSDictionary *state=[NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.status.plist"]?:@{};
-    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@\nHealth schedule probe: %@ (%@)\nSleep cloud feature (Health process): %@\nOne-night override in cloud sync key set: %@\nHealth cloud probe: %@\nSleep daemon observed: %@\nSleep cloud feature (daemon): %@\nSleep daemon cloud preference: %@\nInitial cloud sync: %@\nCloud pull required: %@\nDaemon probe: %@",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never",state[@"healthProbe"]?:@"not run: open Apple Health first",state[@"healthProbeUpdated"]?:@"never",state[@"sleepCloudFeature"]?:@"not checked",state[@"sleepOverrideSyncKey"]?:@"not checked",state[@"sleepCloudChecked"]?:@"never",[state[@"sleepDaemonSeen"] boolValue]?@"yes":@"not observed (await sleepd start)",state[@"sleepDaemonFeature"]?:@"not observed",state[@"sleepDaemonCloud"]?:@"not observed",state[@"sleepDaemonInitial"]?:@"not observed",state[@"sleepDaemonPull"]?:@"not observed",state[@"sleepDaemonChecked"]?:@"never"];
+    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@\nHealth schedule probe: %@ (%@)\nSleep cloud feature (Health process): %@\nOne-night override in cloud sync key set: %@\nHealth cloud probe: %@\nCloud override configured: %@ (applies after userspace reboot)\nSleep daemon observed: %@\nSystem cloud feature (daemon): %@\nCloud override loaded in daemon: %@\nEffective cloud feature (daemon): %@\nSleep daemon cloud preference: %@\nInitial cloud sync: %@\nCloud pull required: %@\nDaemon probe: %@",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never",state[@"healthProbe"]?:@"not run: open Apple Health first",state[@"healthProbeUpdated"]?:@"never",state[@"sleepCloudFeature"]?:@"not checked",state[@"sleepOverrideSyncKey"]?:@"not checked",state[@"sleepCloudChecked"]?:@"never",[DBValue(@"experimentalSleepCloudSync") boolValue]?@"on":@"off",[state[@"sleepDaemonSeen"] boolValue]?@"yes":@"not observed (await sleepd start)",state[@"sleepDaemonOriginalFeature"]?:@"not observed",state[@"sleepDaemonOverride"]?:@"not observed",state[@"sleepDaemonFeature"]?:@"not observed",state[@"sleepDaemonCloud"]?:@"not observed",state[@"sleepDaemonInitial"]?:@"not observed",state[@"sleepDaemonPull"]?:@"not observed",state[@"sleepDaemonChecked"]?:@"never"];
     self.details.text=[self report];
 }
 - (NSString *)report {

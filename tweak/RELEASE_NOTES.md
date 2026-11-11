@@ -1,3 +1,10 @@
+## Daybreak Dopamine 0.2.12 (reversible experimental Sleep cloud feature)
+
+- Added an **OFF by default** `experimentalSleepCloudSync` switch in the Home Screen app and Settings. An enabled switch takes effect after **Dopamine → Reboot Userspace** and can be reversed by switching OFF and rebooting userspace again; a full device reboot is not required.
+- Limited the experiment to `sleepd`'s `_HKFeatureFlags.sleepCloudKitSync` getter. The untouched system return value is recorded before an enabled override returns `YES`; the daemon report shows original and effective values separately.
+- Kept native one-day Sleep updates, hourly calendar automation, notifications, Apple Health injection, and the iPhone 13's existing repeating Sleep schedule unchanged. No force-sync or Health data mutation API was introduced; Apple's existing cloud code may start operating when the flag is enabled.
+- **Experimental limitations:** Overriding a private feature may change or conflict with iCloud Sleep schedule state. iOS 16 CloudKit support, successful upload, cross-iPhone propagation, and Watch alarms are **unverified**. Keep a backup alarm. Disabling the override and restarting userspace restores the getter but does not automatically undo any cloud data changes already made during the experiment.
+
 ## Daybreak Dopamine 0.2.11 (read-only sleepd cloud gate diagnostics)
 
 - Added a separate rootless dylib targeting only `sleepd`. After Apple's `HDSPSleepDaemon.start` completes, the probe reads the **existing** environment's `sleepCloudKitSync` feature flag and `HDSPSyncedDefaults.syncDisabled` cloud preference.

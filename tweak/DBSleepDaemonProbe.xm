@@ -1,14 +1,31 @@
 #import <Foundation/Foundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 #import <objc/message.h>
 #import <notify.h>
+#import <stdatomic.h>
 #import <string.h>
 
-// Observes the *existing* sleepd environment after Apple has started it.
-// Do not instantiate a second HDSPEnvironment, write Sleep preferences, force
-// iCloud traffic, or change the working next-only native Sleep writer.
+// Experimental, opt-in override is confined to the _HKFeatureFlags getter
+// inside sleepd. The default is OFF. Never instantiate a second environment,
+// change Sleep schedules, or invoke a force-sync method. Switching it OFF and
+// rebooting userspace restores the original getter and provider lifecycle.
 @interface HDSPSleepDaemon : NSObject
 - (void)start;
 @end
+@interface _HKFeatureFlags : NSObject
+- (BOOL)sleepCloudKitSync;
+@end
+
+static BOOL DBSDOverrideEnabled = NO;
+static atomic_bool DBSDOriginalSeen;
+static atomic_bool DBSDOriginalValue;
+
+static BOOL DBSDReadOverrideSetting(void) {
+    CFStringRef domain = CFSTR("com.soum91.daybreak.tweak");
+    CFPreferencesAppSynchronize(domain);
+    id value = CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("experimentalSleepCloudSync"), domain));
+    return [value respondsToSelector:@selector(boolValue)] && [value boolValue];
+}
 
 static void DBSDStatus(const char *result) {
     NSString *notification = [@"com.soum91.daybreak.healthprobe."
@@ -37,10 +54,12 @@ static BOOL DBSDBool(id object, NSString *name, BOOL *value) {
 
 static void DBSDInspect(HDSPSleepDaemon *daemon) {
     DBSDStatus("daemon_seen");
+    DBSDStatus(DBSDOverrideEnabled ? "daemon_override_enabled" : "daemon_override_disabled");
     @try {
         id environment = DBSDObject(daemon, @"environment");
         if (!environment) {
             DBSDStatus("daemon_feature_unknown");
+            DBSDStatus("daemon_original_unknown");
             DBSDStatus("daemon_cloud_unknown");
             DBSDStatus("daemon_initial_unknown");
             DBSDStatus("daemon_pull_unknown");
@@ -55,6 +74,10 @@ static void DBSDInspect(HDSPSleepDaemon *daemon) {
             DBSDStatus(feature ? "daemon_feature_on" : "daemon_feature_off");
         else
             DBSDStatus("daemon_feature_unknown");
+        if (atomic_load(&DBSDOriginalSeen))
+            DBSDStatus(atomic_load(&DBSDOriginalValue) ? "daemon_original_on" : "daemon_original_off");
+        else
+            DBSDStatus("daemon_original_unknown");
 
         // Access only the existing environment's synced defaults. In
         // HDSPSyncedDefaults, syncDisabled is the negation of the separate
@@ -80,11 +103,23 @@ static void DBSDInspect(HDSPSleepDaemon *daemon) {
     } @catch (NSException *exception) {
         NSLog(@"[Daybreak] Read-only sleepd probe exception: %@", exception.reason);
         DBSDStatus("daemon_feature_unknown");
+        DBSDStatus("daemon_original_unknown");
         DBSDStatus("daemon_cloud_unknown");
         DBSDStatus("daemon_initial_unknown");
         DBSDStatus("daemon_pull_unknown");
     }
 }
+
+%hook _HKFeatureFlags
+- (BOOL)sleepCloudKitSync {
+    BOOL systemValue = %orig;
+    atomic_store(&DBSDOriginalValue, systemValue);
+    atomic_store(&DBSDOriginalSeen, true);
+    // Changing this one feature gate can cause Apple's existing CloudKit
+    // implementation to initialize. It does not prove cloud sync succeeded.
+    return DBSDOverrideEnabled ? YES : systemValue;
+}
+%end
 
 %hook HDSPSleepDaemon
 - (void)start {
@@ -101,6 +136,9 @@ static void DBSDInspect(HDSPSleepDaemon *daemon) {
 %ctor {
     @autoreleasepool {
         if (![NSProcessInfo.processInfo.processName isEqualToString:@"sleepd"]) return;
+        DBSDOverrideEnabled = DBSDReadOverrideSetting();
+        atomic_init(&DBSDOriginalSeen, false);
+        atomic_init(&DBSDOriginalValue, false);
         %init;
     }
 }

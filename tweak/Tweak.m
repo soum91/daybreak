@@ -311,6 +311,10 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
                     DBShared.status[@"sleepDaemonSeen"]=@YES;
                 else if([result hasPrefix:@"daemon_feature_"])
                     DBShared.status[@"sleepDaemonFeature"]=[result substringFromIndex:[@"daemon_feature_" length]];
+                else if([result hasPrefix:@"daemon_original_"])
+                    DBShared.status[@"sleepDaemonOriginalFeature"]=[result substringFromIndex:[@"daemon_original_" length]];
+                else if([result hasPrefix:@"daemon_override_"])
+                    DBShared.status[@"sleepDaemonOverride"]=[result substringFromIndex:[@"daemon_override_" length]];
                 else if([result hasPrefix:@"daemon_cloud_"])
                     DBShared.status[@"sleepDaemonCloud"]=[result substringFromIndex:[@"daemon_cloud_" length]];
                 else if([result hasPrefix:@"daemon_initial_"])
@@ -386,6 +390,8 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 @"sync_feature_on",@"sync_feature_off",@"sync_feature_unknown",
                 @"sync_override_key_yes",@"sync_override_key_no",@"sync_override_key_unknown",
                 @"daemon_seen",@"daemon_feature_on",@"daemon_feature_off",@"daemon_feature_unknown",
+                @"daemon_original_on",@"daemon_original_off",@"daemon_original_unknown",
+                @"daemon_override_enabled",@"daemon_override_disabled",
                 @"daemon_cloud_on",@"daemon_cloud_off",@"daemon_cloud_unknown",
                 @"daemon_initial_pending",@"daemon_initial_clear",@"daemon_initial_unknown",
                 @"daemon_pull_pending",@"daemon_pull_clear",@"daemon_pull_unknown"]) {
