@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.11 (2026-11-11)
+
+- Added `DBSleepDaemonProbe.xm` and a `sleepd`-only injection filter. Observes the live daemon's `sleepCloudKitSync` feature and its distinct `HDSPSyncedDefaults.syncDisabled` preference, plus pending initial/pull sync flags, without modifying any of them.
+- Added `sleepDaemon*` fixed-code handling in SpringBoard and clear daemon status fields in Daybreak's selectable report. An unobserved daemon remains explicitly unverified.
+- Updated package checks to require the daemon probe dylib and filter. The working next-only native Sleep writer, hourly automation, and notifications are unchanged.
+- Limitation: iPhone 17 / paired Apple Watch receipt is still unverified; this release does not enable cloud synchronization or force the daemon to restart. Source commit to be recorded upon publication.
+
 ## Daybreak Dopamine tweak 0.2.10 (2026-11-10)
 
 - Added two read-only Health-process diagnostics to `DBNativeSleep.m`: the installed iOS 16 `sleepCloudKitSync` feature flag, and whether the one-night Sleep override appears in the installed Sleep daemon's `allKeysToSync` configuration.

@@ -306,6 +306,21 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
                 [DBShared.status writeToFile:DBStatusPath atomically:YES];
                 return;
             }
+            if([result hasPrefix:@"daemon_"]) {
+                if([result isEqualToString:@"daemon_seen"])
+                    DBShared.status[@"sleepDaemonSeen"]=@YES;
+                else if([result hasPrefix:@"daemon_feature_"])
+                    DBShared.status[@"sleepDaemonFeature"]=[result substringFromIndex:[@"daemon_feature_" length]];
+                else if([result hasPrefix:@"daemon_cloud_"])
+                    DBShared.status[@"sleepDaemonCloud"]=[result substringFromIndex:[@"daemon_cloud_" length]];
+                else if([result hasPrefix:@"daemon_initial_"])
+                    DBShared.status[@"sleepDaemonInitial"]=[result substringFromIndex:[@"daemon_initial_" length]];
+                else if([result hasPrefix:@"daemon_pull_"])
+                    DBShared.status[@"sleepDaemonPull"]=[result substringFromIndex:[@"daemon_pull_" length]];
+                DBShared.status[@"sleepDaemonChecked"]=NSDate.date;
+                [DBShared.status writeToFile:DBStatusPath atomically:YES];
+                return;
+            }
             if([result isEqualToString:@"native_request_consumed"]) {
                 NSDictionary *request=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("nativeSleepRequest"),(__bridge CFStringRef)DBPrefs));
                 if([request isKindOfClass:NSDictionary.class] && [request[@"wake"] isKindOfClass:NSDate.class])
@@ -351,7 +366,8 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
 
 __attribute__((constructor)) static void DBLaunch(void) {
     @autoreleasepool {
-        // Only SpringBoard's long-lived process; no hooks into Clock, sleepd or mobiletimerd.
+        // The alarm writer remains confined to SpringBoard and Health.
+        // A separate observational dylib inspects sleepd's cloud state.
         if(![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.springboard"])return;
         dlopen("/System/Library/PrivateFrameworks/MobileTimer.framework/MobileTimer",RTLD_NOW|RTLD_GLOBAL);
         dispatch_async(dispatch_get_main_queue(),^{
@@ -368,7 +384,11 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 @"native_write_submitted",@"native_save_rejected",@"native_already_matched",@"native_readback_match",
                 @"native_readback_unverified",@"native_readback_exception",@"native_write_exception",
                 @"sync_feature_on",@"sync_feature_off",@"sync_feature_unknown",
-                @"sync_override_key_yes",@"sync_override_key_no",@"sync_override_key_unknown"]) {
+                @"sync_override_key_yes",@"sync_override_key_no",@"sync_override_key_unknown",
+                @"daemon_seen",@"daemon_feature_on",@"daemon_feature_off",@"daemon_feature_unknown",
+                @"daemon_cloud_on",@"daemon_cloud_off",@"daemon_cloud_unknown",
+                @"daemon_initial_pending",@"daemon_initial_clear",@"daemon_initial_unknown",
+                @"daemon_pull_pending",@"daemon_pull_clear",@"daemon_pull_unknown"]) {
                 NSString *name=[@"com.soum91.daybreak.healthprobe." stringByAppendingString:result];
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)name,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             }

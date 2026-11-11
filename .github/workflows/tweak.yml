@@ -23,7 +23,7 @@ jobs:
         run: |
           plutil -lint tweak/prefs/Resources/Info.plist tweak/prefs/Resources/Root.plist
           plutil -lint tweak/app/Resources/Info.plist
-          plutil -lint tweak/Daybreak.plist tweak/layout/Library/PreferenceLoader/Preferences/Daybreak.plist
+          plutil -lint tweak/Daybreak.plist tweak/DaybreakSleepDaemonProbe.plist tweak/layout/Library/PreferenceLoader/Preferences/Daybreak.plist
           test -f tweak/DBDiagnosticExport.h
           ! grep -q 'NSTemporaryDirectory' tweak/app/main.m tweak/prefs/DBRootListController.m
           python3 - <<'PY'
@@ -60,6 +60,8 @@ jobs:
           dpkg-deb --contents "$deb" | grep -q '/PreferenceBundles/DaybreakPrefs.bundle/DaybreakPrefs'
           dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakHealthProbe.dylib'
           dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakHealthProbe.plist'
+          dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakSleepDaemonProbe.dylib'
+          dpkg-deb --contents "$deb" | grep -q '/DynamicLibraries/DaybreakSleepDaemonProbe.plist'
           dpkg-deb --ctrl-tarfile "$deb" | tar -tf - | grep -q './postinst'
           cp "$deb" "$GITHUB_WORKSPACE/daybreak-tweak.deb"
       - name: Assemble verified Sileo source

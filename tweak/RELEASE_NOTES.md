@@ -1,3 +1,10 @@
+## Daybreak Dopamine 0.2.11 (read-only sleepd cloud gate diagnostics)
+
+- Added a separate rootless dylib targeting only `sleepd`. After Apple's `HDSPSleepDaemon.start` completes, the probe reads the **existing** environment's `sleepCloudKitSync` feature flag and `HDSPSyncedDefaults.syncDisabled` cloud preference.
+- Reports whether initial cloud sync and a cloud pull are marked pending. All results are fixed codes passed back to SpringBoard and displayed in the Daybreak app's selectable diagnostics. No sleep times or personal records leave the process.
+- Explicitly reports **not observed** if sleepd hasn't started with the updated package. A respring by itself may not restart sleepd; avoid restarting the service near an expected wake alarm.
+- **Limit:** A flag or pending status is not proof that an override uploaded to iCloud or reached the iPhone 17 or its paired Watch. The new probe does not toggle feature flags, force sync, change alarms, or alter the working native writer. Physical device behavior remains unverified.
+
 ## Daybreak Dopamine 0.2.10 (read-only Sleep cloud eligibility diagnostics)
 
 - Added a Health-process read-only probe for the installed iOS 16 `_HKBehavior.features.sleepCloudKitSync` feature flag. Reports on, off, or unknown without changing it.
