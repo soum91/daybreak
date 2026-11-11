@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.4] - 2026-11-10
+
+## Verified changes since tweak-v0.2.3
+
+- Add read-only Apple Health Sleep schedule probe and disable unsynced local writes ([`fedc1178`](https://github.com/soum91/daybreak/commit/fedc11785e3722043652d93f648a77f96c817529); `.github/workflows/tweak.yml`, `tweak/DBHealthProbe.m`, `tweak/DaybreakHealthProbe.plist`, and 9 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.3...tweak-v0.2.4)
+
 ## Daybreak Dopamine tweak 0.2.11 (2026-11-11)
 
 - Added `DBSleepDaemonProbe.xm` and a `sleepd`-only injection filter. Observes the live daemon's `sleepCloudKitSync` feature and its distinct `HDSPSyncedDefaults.syncDisabled` preference, plus pending initial/pull sync flags, without modifying any of them.
