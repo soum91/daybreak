@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.7] - 2026-11-10
+
+## Verified changes since tweak-v0.2.6
+
+- fix(daybreak): correct Sileo metadata and decouple Sleep readback (0.2.7) ([`2c56fbe6`](https://github.com/soum91/daybreak/commit/2c56fbe63ce11295e0c617b6259378637ed55454); `tweak/DBNativeSleep.m`, `tweak/README.md`, `tweak/RELEASE_NOTES.md`, and 4 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.6...tweak-v0.2.7)
+
 ## [tweak-v0.2.6] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.5
