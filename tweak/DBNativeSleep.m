@@ -94,9 +94,52 @@ static BOOL DBNSOnlyOverrideChanged(id before, id after) {
     return YES;
 }
 
+// Read-only compatibility checks. They never access or modify a Sleep schedule,
+// issue a cloud sync request, or force-enable an OS feature flag.
+static void DBNSProbeSyncEligibility(void) {
+    @try {
+        Class behaviorClass = NSClassFromString(@"_HKBehavior");
+        id behavior = DBNSGet((id)behaviorClass, @"sharedBehavior");
+        id features = DBNSGet(behavior, @"features");
+        BOOL enabled = NO;
+        if (DBNSBool(features, @"sleepCloudKitSync", &enabled)) {
+            DBNSStatus(enabled ? "sync_feature_on" : "sync_feature_off");
+        } else {
+            DBNSStatus("sync_feature_unknown");
+        }
+    } @catch (NSException *exception) {
+        NSLog(@"[Daybreak] Read-only Sleep cloud feature check: %@", exception.reason);
+        DBNSStatus("sync_feature_unknown");
+    }
+
+    @try {
+        // Inspect Apple's installed persistence configuration instead of
+        // assuming iOS 16 uses the same sync keys as later iOS releases.
+        if (!dlopen("/System/Library/PrivateFrameworks/SleepDaemon.framework/SleepDaemon",
+                    RTLD_LAZY | RTLD_LOCAL)) {
+            DBNSStatus("sync_override_key_unknown");
+            return;
+        }
+        Class storageClass = NSClassFromString(@"HDSPSleepStorage");
+        id configuration = DBNSGet((id)storageClass, @"standardConfiguration");
+        id keys = DBNSGet(configuration, @"allKeysToSync");
+        if (![keys isKindOfClass:NSSet.class]) {
+            DBNSStatus("sync_override_key_unknown");
+            return;
+        }
+        BOOL included = [keys containsObject:@"HKSPOverrideOccurrence"] ||
+                        [keys containsObject:@"HKSPOverrideDayOccurrence"];
+        DBNSStatus(included ? "sync_override_key_yes" : "sync_override_key_no");
+    } @catch (NSException *exception) {
+        NSLog(@"[Daybreak] Read-only Sleep sync key check: %@", exception.reason);
+        DBNSStatus("sync_override_key_unknown");
+    }
+}
+
 void DBNativeSleepCheck(void) {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         @autoreleasepool {
+            DBNSProbeSyncEligibility();
             @try {
                 if (!DBNSLoadFramework()) { DBNSStatus("native_framework_missing"); return; }
                 id store = DBNSNewStore();

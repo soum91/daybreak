@@ -1,3 +1,10 @@
+## Daybreak Dopamine 0.2.10 (read-only Sleep cloud eligibility diagnostics)
+
+- Added a Health-process read-only probe for the installed iOS 16 `_HKBehavior.features.sleepCloudKitSync` feature flag. Reports on, off, or unknown without changing it.
+- Added a read-only inspection of `HDSPSleepStorage.standardConfiguration.allKeysToSync` to report whether the one-night override key is listed as eligible for cloud synchronization on the installed OS. Reports yes, no, or unknown on framework/API failure.
+- Kept cloud results separate from native-write status and included them in the Home Screen app's selectable diagnostic report. The cloud probes do not alter alarms, force iCloud synchronization, or create ordinary alarms.
+- **Limit:** eligibility and the Health process feature flag do not establish live iCloud upload, the Sleep daemon's individual cloud setting, or iPhone 17 / paired Watch receipt. Those remain unverified. Manual native Sleep writing remains unchanged.
+
 ## Daybreak Dopamine 0.2.9 (hourly Sleep recalculation and notifications)
 
 - Replaced the one-attempt-per-morning schedule guard with one new calendar calculation per hour between configurable daytime hours (12 PM to 11 PM by default). The native writer avoids re-saving a wake time that already matches; failures can be retried next hour.

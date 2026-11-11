@@ -263,7 +263,7 @@ static NSInteger DBInt(NSString *key,NSInteger fallback,NSInteger min,NSInteger 
 }
 - (void)refreshStatus {
     NSDictionary *state=[NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.status.plist"]?:@{};
-    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@\nHealth schedule probe: %@ (%@)",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never",state[@"healthProbe"]?:@"not run: open Apple Health first",state[@"healthProbeUpdated"]?:@"never"];
+    self.status.text=[NSString stringWithFormat:@"%@\n%@\nUpdated: %@\nHealth schedule probe: %@ (%@)\nSleep cloud feature (Health process): %@\nOne-night override in cloud sync key set: %@\nCloud probe: %@",state[@"code"]?:@"Not started",state[@"message"]?:@"No engine report yet",state[@"updated"]?:@"never",state[@"healthProbe"]?:@"not run: open Apple Health first",state[@"healthProbeUpdated"]?:@"never",state[@"sleepCloudFeature"]?:@"not checked",state[@"sleepOverrideSyncKey"]?:@"not checked",state[@"sleepCloudChecked"]?:@"never"];
     self.details.text=[self report];
 }
 - (NSString *)report {

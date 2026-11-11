@@ -292,6 +292,20 @@ static void DBNotification(CFNotificationCenterRef center,void *observer,CFStrin
         NSString *healthPrefix=@"com.soum91.daybreak.healthprobe.";
         if([notification hasPrefix:healthPrefix]) {
             NSString *result=[notification substringFromIndex:healthPrefix.length];
+            // Sleep iCloud eligibility is diagnostic-only. Preserve the native
+            // writer status and never notify or change alarms for these codes.
+            if([result hasPrefix:@"sync_feature_"]) {
+                DBShared.status[@"sleepCloudFeature"]=[result substringFromIndex:[@"sync_feature_" length]];
+                DBShared.status[@"sleepCloudChecked"]=NSDate.date;
+                [DBShared.status writeToFile:DBStatusPath atomically:YES];
+                return;
+            }
+            if([result hasPrefix:@"sync_override_key_"]) {
+                DBShared.status[@"sleepOverrideSyncKey"]=[result substringFromIndex:[@"sync_override_key_" length]];
+                DBShared.status[@"sleepCloudChecked"]=NSDate.date;
+                [DBShared.status writeToFile:DBStatusPath atomically:YES];
+                return;
+            }
             if([result isEqualToString:@"native_request_consumed"]) {
                 NSDictionary *request=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("nativeSleepRequest"),(__bridge CFStringRef)DBPrefs));
                 if([request isKindOfClass:NSDictionary.class] && [request[@"wake"] isKindOfClass:NSDate.class])
@@ -352,7 +366,9 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 @"native_components_missing",@"native_components_invalid",@"native_occurrence_invalid",
                 @"native_repeating_guard",@"native_preview_mismatch",@"native_request_consumed",
                 @"native_write_submitted",@"native_save_rejected",@"native_already_matched",@"native_readback_match",
-                @"native_readback_unverified",@"native_readback_exception",@"native_write_exception"]) {
+                @"native_readback_unverified",@"native_readback_exception",@"native_write_exception",
+                @"sync_feature_on",@"sync_feature_off",@"sync_feature_unknown",
+                @"sync_override_key_yes",@"sync_override_key_no",@"sync_override_key_unknown"]) {
                 NSString *name=[@"com.soum91.daybreak.healthprobe." stringByAppendingString:result];
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)name,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             }

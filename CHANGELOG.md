@@ -1,5 +1,12 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.10 (2026-11-10)
+
+- Added two read-only Health-process diagnostics to `DBNativeSleep.m`: the installed iOS 16 `sleepCloudKitSync` feature flag, and whether the one-night Sleep override appears in the installed Sleep daemon's `allKeysToSync` configuration.
+- Updated SpringBoard's diagnostic notifications to store these results separately from native Sleep save/read-back outcomes. The Daybreak app now prints the two cloud fields and their last-check time in the full selectable report.
+- Kept the successful native one-night writer and hourly planner unchanged. This release cannot claim that iCloud or the iPhone 17 / paired Apple Watch receives a Sleep override; it only checks eligibility on the iPhone 13.
+
+
 ## Daybreak Dopamine tweak 0.2.9 (2026-11-10)
 
 - Changed the SpringBoard scheduler from one evening attempt per morning to an hourly calendar recheck, defaulting to 12 PM through 11 PM. Persisted hourly slots suppress duplicate retries within an hour, but a failed attempt does not block the next hourly check.
