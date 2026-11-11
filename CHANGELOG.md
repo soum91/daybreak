@@ -1,5 +1,14 @@
 # Changelog
 
+## [tweak-v0.2.8] - 2026-11-10
+
+## Verified changes since tweak-v0.2.7
+
+- fix(daybreak): remove obsolete MobileTimer helpers blocking tweak build ([`18747d0f`](https://github.com/soum91/daybreak/commit/18747d0f4972c7dc16365d15695c0dbb6f0b7288); `tweak/Tweak.m`)
+- feat(daybreak): automate native Sleep schedule requests daily (0.2.8) ([`76692b78`](https://github.com/soum91/daybreak/commit/76692b78b01d2fc66ed3920353dd2cc19330efb8); `tweak/Makefile`, `tweak/README.md`, `tweak/RELEASE_NOTES.md`, and 7 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.7...tweak-v0.2.8)
+
 ## [tweak-v0.2.7] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.6
