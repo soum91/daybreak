@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.9] - 2026-11-10
+
+## Verified changes since tweak-v0.2.8
+
+- feat(daybreak): hourly native Sleep checks and status notifications (0.2.9) ([`e4d2c198`](https://github.com/soum91/daybreak/commit/e4d2c1984224da06681b07575be6858c9852dcf5); `tweak/Makefile`, `tweak/README.md`, `tweak/RELEASE_NOTES.md`, and 8 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.8...tweak-v0.2.9)
+
 ## [tweak-v0.2.8] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.7
