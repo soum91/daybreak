@@ -17,13 +17,24 @@
 @end
 
 static BOOL DBSDOverrideEnabled = NO;
+static BOOL DBSDOverrideReadable = YES;
+static HDSPSleepDaemon *DBSDDaemon = nil;
 static atomic_bool DBSDOriginalSeen;
 static atomic_bool DBSDOriginalValue;
 
+// sleepd is sandboxed. cfprefsd may refuse another domain, so fall back to
+// the plist file directly and report when neither source is readable instead
+// of silently treating the switch as OFF.
 static BOOL DBSDReadOverrideSetting(void) {
     CFStringRef domain = CFSTR("com.soum91.daybreak.tweak");
     CFPreferencesAppSynchronize(domain);
     id value = CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("experimentalSleepCloudSync"), domain));
+    if (![value respondsToSelector:@selector(boolValue)]) {
+        NSDictionary *file = [NSDictionary dictionaryWithContentsOfFile:
+            @"/var/mobile/Library/Preferences/com.soum91.daybreak.tweak.plist"];
+        value = file[@"experimentalSleepCloudSync"];
+        DBSDOverrideReadable = (file != nil);
+    }
     return [value respondsToSelector:@selector(boolValue)] && [value boolValue];
 }
 
@@ -54,7 +65,8 @@ static BOOL DBSDBool(id object, NSString *name, BOOL *value) {
 
 static void DBSDInspect(HDSPSleepDaemon *daemon) {
     DBSDStatus("daemon_seen");
-    DBSDStatus(DBSDOverrideEnabled ? "daemon_override_enabled" : "daemon_override_disabled");
+    DBSDStatus(DBSDOverrideEnabled ? "daemon_override_enabled" :
+               (DBSDOverrideReadable ? "daemon_override_disabled" : "daemon_override_unreadable"));
     @try {
         id environment = DBSDObject(daemon, @"environment");
         if (!environment) {
@@ -124,12 +136,16 @@ static void DBSDInspect(HDSPSleepDaemon *daemon) {
 %hook HDSPSleepDaemon
 - (void)start {
     %orig;
-    // Apple is allowed to finish preparing its environment first. This is an
-    // observational callback and does not alter or delay daemon startup.
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 8 * NSEC_PER_SEC),
-                   dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-        @autoreleasepool { DBSDInspect(self); }
-    });
+    DBSDDaemon = self;
+    // Darwin notifications are not queued. After a userspace reboot sleepd
+    // can start before SpringBoard subscribes, so one early report is lost.
+    // Repeat a few times and also answer explicit refresh requests below.
+    for (NSNumber *delay in @[@8, @45, @180]) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delay.longLongValue * NSEC_PER_SEC),
+                       dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+            @autoreleasepool { DBSDInspect(self); }
+        });
+    }
 }
 %end
 
@@ -140,5 +156,11 @@ static void DBSDInspect(HDSPSleepDaemon *daemon) {
         atomic_init(&DBSDOriginalSeen, false);
         atomic_init(&DBSDOriginalValue, false);
         %init;
+        int token = 0;
+        notify_register_dispatch("com.soum91.daybreak.daemonprobe.request", &token,
+                                 dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^(int t) {
+            (void)t;
+            @autoreleasepool { if (DBSDDaemon) DBSDInspect(DBSDDaemon); }
+        });
     }
 }

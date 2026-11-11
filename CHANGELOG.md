@@ -1,5 +1,13 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.13 (2026-11-11)
+
+- `tweak/DBSleepDaemonProbe.xm`: sleepd now re-reports its state at 8 s, 45 s and 180 s after start and whenever it receives `com.soum91.daybreak.daemonprobe.request`. Previously it reported once at 8 s; after a userspace reboot sleepd starts before SpringBoard subscribes, so that single Darwin notification was lost and the override result never appeared.
+- `tweak/DBSleepDaemonProbe.xm`: if cfprefsd refuses the Daybreak domain inside sandboxed sleepd, the override switch is read directly from the preferences plist. If neither source is readable the daemon reports `unreadable` instead of silently behaving as OFF.
+- `tweak/Tweak.m`: SpringBoard discards `sleepDaemon*` status fields left from a previous boot and requests a fresh daemon report on launch.
+- `tweak/app/main.m`: Refresh status asks sleepd for a live report and reloads after 1.5 s. When sleepd is idle (launch-on-demand) the screen says so instead of showing old values.
+- Limitations: unverified on device. The cloud override itself is unchanged from 0.2.12; whether iOS 16 sleepd can sync Sleep schedules with iOS 27 devices is still unknown.
+
 ## Daybreak Dopamine tweak 0.2.12 (2026-11-11)
 
 - Added a disabled-by-default, reversible `experimentalSleepCloudSync` control in the Daybreak app and Settings bundle. A Dopamine userspace reboot activates or deactivates it.

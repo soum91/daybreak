@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <notify.h>
 #import <EventKit/EventKit.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <UserNotifications/UserNotifications.h>
@@ -95,6 +96,10 @@ static void DBPostStatusNotification(NSString *key,NSString *title,NSString *mes
 - (instancetype)init {
     if((self=[super init])) {
         _status=[NSMutableDictionary dictionaryWithDictionary:[NSDictionary dictionaryWithContentsOfFile:DBStatusPath]?:@{}];
+        // Daemon fields from a previous boot are stale and misleading. Drop
+        // them; a live sleepd repopulates them on its next report or request.
+        for(NSString *key in _status.allKeys)
+            if([key hasPrefix:@"sleepDaemon"]) [_status removeObjectForKey:key];
     }
     return self;
 }
@@ -391,7 +396,7 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 @"sync_override_key_yes",@"sync_override_key_no",@"sync_override_key_unknown",
                 @"daemon_seen",@"daemon_feature_on",@"daemon_feature_off",@"daemon_feature_unknown",
                 @"daemon_original_on",@"daemon_original_off",@"daemon_original_unknown",
-                @"daemon_override_enabled",@"daemon_override_disabled",
+                @"daemon_override_enabled",@"daemon_override_disabled",@"daemon_override_unreadable",
                 @"daemon_cloud_on",@"daemon_cloud_off",@"daemon_cloud_unknown",
                 @"daemon_initial_pending",@"daemon_initial_clear",@"daemon_initial_unknown",
                 @"daemon_pull_pending",@"daemon_pull_clear",@"daemon_pull_unknown"]) {
@@ -399,6 +404,7 @@ __attribute__((constructor)) static void DBLaunch(void) {
                 CFNotificationCenterAddObserver(center,NULL,DBNotification,(__bridge CFStringRef)name,NULL,CFNotificationSuspensionBehaviorDeliverImmediately);
             }
             [DBShared started];
+            notify_post("com.soum91.daybreak.daemonprobe.request");
         });
     }
 }
