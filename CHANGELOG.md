@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.13] - 2026-11-11
+
+## Verified changes since tweak-v0.2.12
+
+- fix(daybreak): live sleepd status refresh and override pref fallback (0.2.13) ([`9346556c`](https://github.com/soum91/daybreak/commit/9346556c67e7787590024e3d9c66ec85e9544908); `tweak/DBSleepDaemonProbe.xm`, `tweak/RELEASE_NOTES.md`, `tweak/Tweak.m`, and 4 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.12...tweak-v0.2.13)
+
 ## [tweak-v0.2.12] - 2026-11-11
 
 ## Verified changes since tweak-v0.2.11
