@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.12] - 2026-11-11
+
+## Verified changes since tweak-v0.2.11
+
+- feat(daybreak): add opt-in reversible sleepd cloud feature override ([`c5ad503d`](https://github.com/soum91/daybreak/commit/c5ad503dfc9169bf71d84e9e566ac5c266123121); `tweak/DBSleepDaemonProbe.xm`, `tweak/Makefile`, `tweak/RELEASE_NOTES.md`, and 6 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.11...tweak-v0.2.12)
+
 ## Daybreak Dopamine tweak 0.2.13 (2026-11-11)
 
 - `tweak/DBSleepDaemonProbe.xm`: sleepd now re-reports its state at 8 s, 45 s and 180 s after start and whenever it receives `com.soum91.daybreak.daemonprobe.request`. Previously it reported once at 8 s; after a userspace reboot sleepd starts before SpringBoard subscribes, so that single Darwin notification was lost and the override result never appeared.
