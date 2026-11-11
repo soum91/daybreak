@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.11] - 2026-11-11
+
+## Verified changes since tweak-v0.2.10
+
+- feat(daybreak): inspect live sleepd cloud sync gates without mutation ([`f9a7f453`](https://github.com/soum91/daybreak/commit/f9a7f453c831fe50ac1fd1776480abe6cc26e12a); `.github/workflows/tweak.yml`, `tweak/DBSleepDaemonProbe.xm`, `tweak/DaybreakSleepDaemonProbe.plist`, and 7 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.10...tweak-v0.2.11)
+
 ## [tweak-v0.2.10] - 2026-11-11
 
 ## Verified changes since tweak-v0.2.9
