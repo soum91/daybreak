@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.5] - 2026-11-10
+
+## Verified changes since tweak-v0.2.4
+
+- Fix Daybreak diagnostic clipboard read-back and avoid unwritable temporary export ([`a524b249`](https://github.com/soum91/daybreak/commit/a524b249269d8ebf6e0415cf485b204be3bcc110); `.github/workflows/tweak.yml`, `tweak/DBDiagnosticExport.h`, `tweak/README.md`, and 6 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.4...tweak-v0.2.5)
+
 ## [tweak-v0.2.4] - 2026-11-10
 
 ## Verified changes since tweak-v0.2.3
