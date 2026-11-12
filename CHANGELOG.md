@@ -1,5 +1,11 @@
 # Changelog
 
+## Daybreak Dopamine tweak 0.2.14 (2026-11-12)
+
+- `tweak/DBSleepDaemonProbe.xm`: on its first report after sleepd starts, the probe writes a one-time, read-only list to the system log (prefix `[DaybreakDump]`): Objective-C class names containing cloud/sync from the sleepd, Sleep and HealthKit images, plus cloud/sync-named properties (value class or YES/NO) on the daemon, its environment, sleep storage, synced defaults and behavior objects. No schedule contents are logged and nothing is changed.
+- Why: with 0.2.13 the `sleepCloudKitSync` override reads ON inside sleepd, but on-device `oslog` showed no Sleep CloudKit activity at all after a schedule change. The dump is meant to identify which object or gate actually starts Sleep sync on iOS 16.1.1.
+- Limitations: diagnostic only; unverified on device. No sync behavior changed from 0.2.13.
+
 ## [tweak-v0.2.13] - 2026-11-11
 
 ## Verified changes since tweak-v0.2.12

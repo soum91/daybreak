@@ -4,6 +4,7 @@
 #import <notify.h>
 #import <stdatomic.h>
 #import <string.h>
+#import <objc/runtime.h>
 
 // Experimental, opt-in override is confined to the _HKFeatureFlags getter
 // inside sleepd. The default is OFF. Never instantiate a second environment,
@@ -63,8 +64,75 @@ static BOOL DBSDBool(id object, NSString *name, BOOL *value) {
     return YES;
 }
 
+
+// One-shot, read-only structure dump to the system log so the sync path can
+// be identified on iOS 16. Logs class and property NAMES plus the runtime
+// class of each matching property value. No schedule data, no mutation.
+static BOOL DBSDMatches(NSString *name) {
+    NSString *l = name.lowercaseString;
+    return [l containsString:@"cloud"] || [l containsString:@"sync"] || [l containsString:@"ckzone"];
+}
+static void DBSDDumpObject(NSString *label, id object) {
+    if (!object) { NSLog(@"[DaybreakDump] %@ = nil", label); return; }
+    NSLog(@"[DaybreakDump] %@ class=%@", label, NSStringFromClass([object class]));
+    for (Class c = [object class]; c && c != NSObject.class; c = class_getSuperclass(c)) {
+        unsigned int count = 0;
+        objc_property_t *props = class_copyPropertyList(c, &count);
+        for (unsigned int i = 0; i < count; i++) {
+            NSString *name = [NSString stringWithUTF8String:property_getName(props[i])];
+            if (!DBSDMatches(name)) continue;
+            const char *attrs = property_getAttributes(props[i]);
+            NSString *value = @"?";
+            if (attrs && attrs[1] == '@') {
+                id v = DBSDObject(object, name);
+                value = v ? NSStringFromClass([v class]) : @"nil";
+            } else {
+                BOOL b = NO;
+                if (DBSDBool(object, name, &b)) value = b ? @"YES" : @"NO";
+            }
+            NSLog(@"[DaybreakDump] %@.%@ -> %@", label, name, value);
+        }
+        free(props);
+    }
+}
+static void DBSDDumpOnce(HDSPSleepDaemon *daemon) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        @try {
+            const char *image = class_getImageName([daemon class]);
+            NSLog(@"[DaybreakDump] sleepd image=%s", image ?: "?");
+            NSMutableSet *images = [NSMutableSet set];
+            if (image) [images addObject:@(image)];
+            for (NSString *cn in @[@"HDSPSleepStorage", @"HKSPSleepStore", @"_HKFeatureFlags"]) {
+                Class k = NSClassFromString(cn);
+                const char *im = k ? class_getImageName(k) : NULL;
+                if (im) [images addObject:@(im)];
+            }
+            for (NSString *path in images) {
+                unsigned int count = 0;
+                const char **names = objc_copyClassNamesForImage(path.UTF8String, &count);
+                for (unsigned int i = 0; i < count; i++) {
+                    NSString *n = @(names[i]);
+                    if (DBSDMatches(n)) NSLog(@"[DaybreakDump] class %@ (%@)", n, path.lastPathComponent);
+                }
+                free(names);
+            }
+            id environment = DBSDObject(daemon, @"environment");
+            DBSDDumpObject(@"daemon", daemon);
+            DBSDDumpObject(@"environment", environment);
+            DBSDDumpObject(@"sleepStorage", DBSDObject(environment, @"sleepStorage"));
+            DBSDDumpObject(@"syncedDefaults", DBSDObject(DBSDObject(environment, @"sleepStorage"), @"syncedDefaults"));
+            DBSDDumpObject(@"behavior", DBSDObject(environment, @"behavior"));
+            NSLog(@"[DaybreakDump] done");
+        } @catch (NSException *e) {
+            NSLog(@"[DaybreakDump] exception %@", e.reason);
+        }
+    });
+}
+
 static void DBSDInspect(HDSPSleepDaemon *daemon) {
     DBSDStatus("daemon_seen");
+    DBSDDumpOnce(daemon);
     DBSDStatus(DBSDOverrideEnabled ? "daemon_override_enabled" :
                (DBSDOverrideReadable ? "daemon_override_disabled" : "daemon_override_unreadable"));
     @try {

@@ -1,3 +1,9 @@
+## Daybreak Dopamine 0.2.14 (sleepd sync structure dump)
+
+- `tweak/DBSleepDaemonProbe.xm`: on its first report after sleepd starts, the probe writes a one-time, read-only list to the system log (prefix `[DaybreakDump]`): Objective-C class names containing cloud/sync from the sleepd, Sleep and HealthKit images, plus cloud/sync-named properties (value class or YES/NO) on the daemon, its environment, sleep storage, synced defaults and behavior objects. No schedule contents are logged and nothing is changed.
+- Why: with 0.2.13 the `sleepCloudKitSync` override reads ON inside sleepd, but on-device `oslog` showed no Sleep CloudKit activity at all after a schedule change. The dump is meant to identify which object or gate actually starts Sleep sync on iOS 16.1.1.
+- Limitations: diagnostic only; unverified on device. No sync behavior changed from 0.2.13.
+
 ## Daybreak Dopamine 0.2.13 (live sleepd status, override pref fallback)
 
 - `tweak/DBSleepDaemonProbe.xm`: sleepd now re-reports its state at 8 s, 45 s and 180 s after start and whenever it receives `com.soum91.daybreak.daemonprobe.request`. Previously it reported once at 8 s; after a userspace reboot sleepd starts before SpringBoard subscribes, so that single Darwin notification was lost and the override result never appeared.
