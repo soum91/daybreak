@@ -1,5 +1,13 @@
 # Changelog
 
+## [tweak-v0.2.14] - 2026-11-12
+
+## Verified changes since tweak-v0.2.13
+
+- feat(daybreak): one-shot sleepd cloud/sync structure dump to oslog (0.2.14) ([`7de3dc90`](https://github.com/soum91/daybreak/commit/7de3dc90a52f74769791d111baab751fb08cc3e8); `tweak/DBSleepDaemonProbe.xm`, `tweak/RELEASE_NOTES.md`, `tweak/app/Resources/Info.plist`, and 2 more)
+
+[Inspect exact code changes](https://github.com/soum91/daybreak/compare/tweak-v0.2.13...tweak-v0.2.14)
+
 ## Daybreak Dopamine tweak 0.2.14 (2026-11-12)
 
 - `tweak/DBSleepDaemonProbe.xm`: on its first report after sleepd starts, the probe writes a one-time, read-only list to the system log (prefix `[DaybreakDump]`): Objective-C class names containing cloud/sync from the sleepd, Sleep and HealthKit images, plus cloud/sync-named properties (value class or YES/NO) on the daemon, its environment, sleep storage, synced defaults and behavior objects. No schedule contents are logged and nothing is changed.
