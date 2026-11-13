@@ -1,7 +1,7 @@
 import plistlib,sys
 from pathlib import Path
 root=Path(sys.argv[1]); app=root/'var/jb/Applications/USBKeys.app'
-info=dict(CFBundleIdentifier='dev.usbkeys.app',CFBundleExecutable='USBKeys',CFBundleName='USBKeys',CFBundleDisplayName='USBKeys',CFBundlePackageType='APPL',CFBundleInfoDictionaryVersion='6.0',CFBundleSupportedPlatforms=['iPhoneOS'],CFBundleShortVersionString='0.1.6',CFBundleVersion='7',MinimumOSVersion='16.1',LSRequiresIPhoneOS=True,UIDeviceFamily=[1],UILaunchScreen={},UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait'])
+info=dict(CFBundleIdentifier='dev.usbkeys.app',CFBundleExecutable='USBKeys',CFBundleName='USBKeys',CFBundleDisplayName='USBKeys',CFBundlePackageType='APPL',CFBundleInfoDictionaryVersion='6.0',CFBundleSupportedPlatforms=['iPhoneOS'],CFBundleShortVersionString='0.1.7',CFBundleVersion='8',MinimumOSVersion='16.1',LSRequiresIPhoneOS=True,UIDeviceFamily=[1],UILaunchScreen={},UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait'])
 plistlib.dump(info,(app/'Info.plist').open('wb'))
 service=dict(Label='dev.usbkeys.service',ProgramArguments=['/var/jb/usr/libexec/usbkeysd'],UserName='root',RunAtLoad=True,KeepAlive=True,ThrottleInterval=5,ProcessType='Interactive',ExitTimeOut=10)
 plistlib.dump(service,(root/'var/jb/Library/LaunchDaemons/dev.usbkeys.service.plist').open('wb'))

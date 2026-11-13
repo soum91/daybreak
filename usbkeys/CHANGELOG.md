@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7 (8): phone-only source trace
+
+- Automatically retain the last 64 timestamped HID control callbacks and replies, including request metadata, stage and status. Never record payloads, transaction tokens, typed keys or passcodes.
+- Timestamp setup and interrupt-transfer events; retain actual transfer lengths/errors and native activation/state transitions in existing selectable Copy/Share/Save reports. Preserve the trace after Stop.
+- This is source-side recording for a recovery-mode target, not a full USB bus sniffer or a keyboard compatibility fix. Device behavior remains unverified.
+
 ## 0.1.6 (7): data-stage callbacks and interrupt counters
 
 - Correction to the initial release claim: replacing the control buffer address with its token is a no-op on native 20B101. `_createBuffer` writes the same value into outputs 0 and 2. It must not be described as a demonstrated transport fix.

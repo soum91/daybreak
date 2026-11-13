@@ -1,6 +1,6 @@
 Package: dev.usbkeys.keyboard
 Name: USBKeys Experimental
-Version: 0.1.6
+Version: 0.1.7
 Architecture: iphoneos-arm64
 Description: Experimental physical USB HID keyboard for Dopamine. Hardware support is unverified.
 Maintainer: soum91

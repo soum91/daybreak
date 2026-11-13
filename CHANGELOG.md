@@ -1,5 +1,10 @@
 # Changelog
 
+## USBKeys 0.1.7 (8): phone-only source trace
+
+- Add a bounded timestamped trace of HID control metadata, callback/reply stages, transfer lengths/errors and native driver transitions to the existing report exports. Payloads and key values are omitted; Stop retains the recording.
+- Recording only; target input compatibility is not established.
+
 ## USBKeys 0.1.6 (7)
 
 - Correction: the control buffer address-to-token substitution is a no-op on 20B101 because allocation outputs 0 and 2 are identical. The earlier claim of a demonstrated buffer-argument fix was unsupported.

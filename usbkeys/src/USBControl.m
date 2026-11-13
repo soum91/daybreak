@@ -8,6 +8,8 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <dispatch/dispatch.h>
+#include <stdio.h>
+#include <time.h>
 struct UKUSBControl {
   io_connect_t port;
   IONotificationPortRef notification;
@@ -20,9 +22,33 @@ struct UKUSBControl {
   dispatch_semaphore_t ready;
   UKHIDState hid;
   UKControlStats stats;
+  char trace[64][160];
+  uint64_t traceCount, epoch;
 };
+// Called under lock. Record request metadata only, never payloads or key bytes.
+static void UKTrace(UKUSBControl *c, const char *event, uint64_t stage,
+ uint64_t packed, uint64_t dimensions, IOReturn status) {
+  snprintf(c->trace[c->traceCount++%64],160,
+    "+%llu ms %s stage=%llu type=%02x request=%02x value=%04x index=%04x length=%u status=0x%08x",
+    (clock_gettime_nsec_np(CLOCK_MONOTONIC)-c->epoch)/1000000,event,stage,
+    (unsigned)((packed>>24)&255),(unsigned)((packed>>16)&255),(unsigned)(packed&65535),
+    (unsigned)((dimensions>>16)&65535),(unsigned)(dimensions&65535),status);
+}
+void UKControlTrace(UKUSBControl *c, char *out, size_t capacity) {
+  if(!capacity) return; out[0]=0; if(!c) return;
+  pthread_mutex_lock(&c->lock);
+  size_t used=0; uint64_t start=c->traceCount>64?c->traceCount-64:0;
+  for(uint64_t i=start;i<c->traceCount && used+1<capacity;i++) {
+    int n=snprintf(out+used,capacity-used,"%s\n",c->trace[i%64]);
+    if(n<0 || (size_t)n>=capacity-used) break; used+=(size_t)n;
+  }
+  pthread_mutex_unlock(&c->lock);
+}
 static void UKControlCallback(void *refcon, IOReturn result, uint64_t *args, uint32_t count) {
   UKUSBControl *c=refcon;
+  pthread_mutex_lock(&c->lock);
+  UKTrace(c,"host callback",count?args[0]:99,count>1?args[1]:0,count>2?args[2]:0,result?:((count>5)?(IOReturn)args[5]:0));
+  pthread_mutex_unlock(&c->lock);
   if(result || count<5) {
     pthread_mutex_lock(&c->lock); c->stats.failures++; c->stats.lastError=result?:kIOReturnBadArgument; pthread_mutex_unlock(&c->lock); return;
   }
@@ -40,6 +66,7 @@ static void UKControlCallback(void *refcon, IOReturn result, uint64_t *args, uin
     }
     uint64_t done[]={args[5],args[4]};
     IOReturn r=IOConnectCallScalarMethod(c->port,9,done,2,NULL,NULL);
+    pthread_mutex_lock(&c->lock); UKTrace(c,"OUT status ack",2,args[1],args[2],r); pthread_mutex_unlock(&c->lock);
     memset(c->buffer,0,4096); // discard received LED data
     pthread_mutex_lock(&c->lock);
     if(r||args[5]) { c->stats.failures++; c->stats.lastError=r?:(IOReturn)args[5]; }
@@ -64,11 +91,11 @@ static void UKControlCallback(void *refcon, IOReturn result, uint64_t *args, uin
   c->stats.protocol=c->hid.protocol; c->stats.idle=c->hid.idle;
   pthread_mutex_unlock(&c->lock);
   // Native: handled, buffer length, allocation token, status, transaction.
-  // 20B101 resolves scalar 2 through findBuffer(), just like writePipe.
-  // A mapped userspace address is not the allocation's kernel lookup token.
+  // Native 20B101 returns identical allocation address and token values.
   uint64_t done[5]; UKControlSetupReply(done,handled,size,c->token,args[4]);
   IOReturn r=IOConnectCallScalarMethod(c->port,9,done,5,NULL,NULL);
   pthread_mutex_lock(&c->lock);
+  UKTrace(c,handled?"setup reply":"setup rejected",0,args[1],args[2],r);
   if(r) { c->stats.failures++; c->stats.lastError=r; }
   else if(handled) c->stats.replies++;
   pthread_mutex_unlock(&c->lock);
@@ -99,6 +126,7 @@ IOReturn UKControlStart(io_connect_t port, UKUSBControl **out) {
   *out=NULL;
   UKUSBControl *c=calloc(1,sizeof(*c)); if(!c) return kIOReturnNoMemory;
   c->port=port; c->hid.protocol=1; c->stats.protocol=1;
+  c->epoch=clock_gettime_nsec_np(CLOCK_MONOTONIC);
   atomic_init(&c->stopping,false); pthread_mutex_init(&c->lock,NULL);
   uint64_t size[]={4096}, mapped[3]={0}; uint32_t n=3;
   IOReturn r=IOConnectCallScalarMethod(port,18,size,1,mapped,&n);

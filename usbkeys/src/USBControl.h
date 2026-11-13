@@ -10,3 +10,4 @@ typedef struct {
 IOReturn UKControlStart(io_connect_t port, UKUSBControl **control);
 void UKControlStop(UKUSBControl *control);
 UKControlStats UKControlRead(UKUSBControl *control);
+void UKControlTrace(UKUSBControl *control, char *out, size_t capacity);
