@@ -1,5 +1,13 @@
 # Changelog
 
+## USBKeys 0.1.5 (6): HID host control requests (2026-11-13)
+
+- Added the missing USB HID control-request handler: GET/SET_PROTOCOL, GET/SET_IDLE, GET/SET_REPORT, plus a descriptor fallback. A dedicated notification run loop handles setup, IN completion and OUT data/status phases; a separate mapped buffer receives and discards LED reports. Stop joins the callback thread before releasing its buffers.
+- Honor nonzero HID idle periods using released-state reports between manual taps. Never repeat a typed key. Manual keys now require the native driver to report the interface active; failed control transfers stop the session without retry.
+- Show live request counts by type, completion/rejection/error counts, boot/report protocol, idle interval and native interface state. Heartbeats refresh this evidence without requiring another key or screenshot. Label app activation as local setup and preserve control evidence after Stop.
+- Verified 15 used selector signatures against the actual iPhone14,3 iOS 16.1.1 / 20B101 dispatcher, including callback registration/completion and isActive. Checked native callback packing and its distinct OUT completion acknowledgement. Added portable HID request tests including malformed and short requests.
+- Built using the Theos clang/ld64 toolchain and iPhoneOS 16.5 SDK. Signed-code preservation, scoped entitlements, package metadata, seven mocked installer cases, HID mapping and address/undefined-behavior-sanitized HID control tests pass (leak detection disabled because the host cannot run LeakSanitizer). No physical iPhone is connected here. The user's 0.1.4 setup/transport succeeded locally but produced no target input; this release corrects a code omission and does not claim verified recovery-screen compatibility.
+
 ## USBKeys 0.1.4 (5): controller-create hang detection (2026-11-13)
 
 - The user's 0.1.2 report stopped at "BEGIN: Create controller" with no return code: `IOUSBDeviceControllerCreate` never returned, so no USB change was ever attempted. Create now runs on a worker thread with a 4 s deadline. On timeout the service reports "hung", refuses further USB calls, replies, and exits so launchd relaunches it clean; the hung report is preserved for Last result.

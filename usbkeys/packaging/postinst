@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+# Procursus supplies launchctl inside the rootless bootstrap, not /bin.
+PATH=/var/jb/usr/bin:/var/jb/bin:/var/jb/usr/sbin:/var/jb/sbin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+launchctl_path=$(command -v launchctl) || {
+    echo 'USBKeys: launchctl is missing. Install the Procursus launchctl dependency.' >&2
+    exit 1
+}
+plist=/var/jb/Library/LaunchDaemons/dev.usbkeys.service.plist
+runtime=/var/jb/var/run/usbkeys
+mkdir -p "$runtime"
+chown 0:501 "$runtime"
+chmod 0750 "$runtime"
+"$launchctl_path" bootout system/dev.usbkeys.service 2>/dev/null || true
+# A loaded job may have left a stale socket after a previous failed install.
+rm -f "$runtime/control.sock"
+if ! "$launchctl_path" bootstrap system "$plist"; then
+    echo 'USBKeys: bootstrap failed; trying launchctl load.' >&2
+    "$launchctl_path" load -w "$plist" || {
+        echo 'USBKeys: launchd refused to start the USB service.' >&2
+        exit 1
+    }
+fi
+attempt=0
+while [ ! -S "$runtime/control.sock" ] && [ "$attempt" -lt 5 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+if [ ! -S "$runtime/control.sock" ]; then
+    echo 'USBKeys: service was submitted but its control socket did not appear.' >&2
+    "$launchctl_path" print system/dev.usbkeys.service >&2 || true
+    exit 1
+fi
+uicache -p /var/jb/Applications/USBKeys.app
+echo 'USBKeys: USB service started and control socket is present.'

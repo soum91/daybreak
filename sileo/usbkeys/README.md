@@ -51,7 +51,7 @@ The actual 20B101 kernel contains IOUSBDeviceInterfaceUserClient, and its 12 use
 dispatcher signatures match. This establishes ABI evidence, not that the user's
 open failure is resolved. Physical USB operation remains unverified.
 
-`USBKeys-0.1.4-source.zip` contains the complete source, evidence and build instructions.
+`USBKeys-0.1.5-source.zip` contains the complete source, evidence and build instructions.
 Run `python3 scripts/build_usbkeys_sileo.py` from the repository root to rebuild
 these indexes. SHA256SUMS and Release contain hashes for byte verification.
 
@@ -61,3 +61,10 @@ on timeout the service reports it, refuses further USB calls and restarts. Check
 and Start also list whether an `IOUSBDeviceController` service exists and which USB
 device-mode IOService classes are present (names only). Diagnostic only; the hang
 itself is not fixed.
+
+**0.1.5 (6)** adds explicit HID control-request handling, including boot/report
+protocol, idle and reports, and the native OUT status phase. Live diagnostics
+show request counters and native interface activation. The user's 0.1.4 local
+setup completed but produced no input on the target. This release fixes an
+identified code omission; target input and Recovery Assistant support remain
+unverified. Refresh Sileo and upgrade USBKeys Experimental to 0.1.5.

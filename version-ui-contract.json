@@ -39,6 +39,19 @@
           ]
         }
       ]
+    },
+    {
+      "name": "USBKeys Dopamine Home Screen app",
+      "evidence": [
+        {
+          "path": "usbkeys/src/App.m",
+          "contains": [
+            "UKInstalledVersion()",
+            "CFBundleShortVersionString",
+            "CFBundleVersion"
+          ]
+        }
+      ]
     }
   ]
 }

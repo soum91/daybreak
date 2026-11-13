@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+PATH=/var/jb/usr/bin:/var/jb/bin:/var/jb/usr/sbin:/var/jb/sbin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+# bootout sends SIGTERM; ExitTimeOut gives the daemon time to restore USB.
+launchctl_path=$(command -v launchctl) || exit 0
+"$launchctl_path" bootout system/dev.usbkeys.service 2>/dev/null || true

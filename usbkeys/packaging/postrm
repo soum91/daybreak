@@ -1,0 +1,4 @@
+#!/bin/sh
+PATH=/var/jb/usr/bin:/var/jb/bin:/var/jb/usr/sbin:/var/jb/sbin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+uicache -u /var/jb/Applications/USBKeys.app 2>/dev/null || true

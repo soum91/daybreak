@@ -1,0 +1,17 @@
+{
+  "device": "iPhone14,3",
+  "ios": "16.1.1",
+  "build": "20B101",
+  "ipsw_url": "https://updates.cdn-apple.com/2022FallFCS/fullrestores/012-97051/604F9FC5-7042-4E54-8144-5D6A99082943/iPhone14,3_16.1.1_20B101_Restore.ipsw",
+  "decompressed_kernel_sha256": "4d9721e5643eb82f99680453c40661ecafa17ea3d1f421ef90cd68be78329e1f",
+  "kext": "com.apple.iokit.IOUSBDeviceFamily",
+  "user_client": "IOUSBDeviceInterfaceUserClient",
+  "initWithTask": "0xfffffff009d6a4a4",
+  "start": "0xfffffff009d6a7d0",
+  "dispatch_table": "0xfffffff007c138d8",
+  "scope": "15 dispatcher signatures, callback packing and completion argument interpretation checked against native 20B101. Hardware behavior remains unverified.",
+  "callback_setup": "0xfffffff009d6b05c",
+  "callback_completion": "0xfffffff009d6b190",
+  "callback_data_finish": "0xfffffff009d6b4c4",
+  "isActive_wrapper": "0xfffffff009d69cbc"
+}
