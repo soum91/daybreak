@@ -1,5 +1,11 @@
 # Changelog
 
+## USBKeys experimental Sileo hosting (2026-11-13)
+
+- Added a separate flat APT source at `sileo/usbkeys/`, with the original USBKeys 0.1.0 rootless package, source archive, icon, compressed package indexes, and Release checksums.
+- Added `scripts/build_usbkeys_sileo.py` to regenerate only the USBKeys source. The existing Daybreak source and app code are unchanged.
+- Hosting only: no new USBKeys app behavior or hardware compatibility is claimed. USB HID operation, Sileo installation, and iPhone 17 Recovery Assistant support remain unverified on physical devices.
+
 ## [tweak-v0.2.14] - 2026-11-12
 
 ## Verified changes since tweak-v0.2.13

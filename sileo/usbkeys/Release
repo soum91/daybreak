@@ -1,0 +1,16 @@
+Origin: USBKeys
+Label: USBKeys Experimental
+Suite: stable
+Codename: usbkeys
+Version: 1.0
+Architectures: iphoneos-arm64
+Components: main
+Description: Experimental USB HID keyboard for Dopamine on iOS 16
+MD5Sum:
+ 602428d4f331e486513bd20f6ab09bc7 575 Packages
+ 157f8fe23cc6e34a8a6e4ab6207245e2 404 Packages.gz
+ 2618cced45952879368b56405922b23c 445 Packages.bz2
+SHA256:
+ c2cffe44977b857a554b35ee1371c2db068f9e0d982e48481dae93eef3d86610 575 Packages
+ 4a070f7ef30a560940be5965b9ca38dec102e78bf7adbb2c38324a177813534e 404 Packages.gz
+ 78fb41f48980ebe6423cd5a454b611a62ce22183a8a4fff54b34fcdbde46dabf 445 Packages.bz2
