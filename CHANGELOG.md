@@ -1,5 +1,12 @@
 # Changelog
 
+## USBKeys 0.1.3 (4): USB user-client permission correction (2026-11-13)
+
+- Corrected the helper's IOKit class exception entitlement key, added USB device access, and added a signed-binary permission gate. Runtime reports include only the relevant permission grant states and advertised user-client class.
+- Investigated the actual iPhone14,3 / iOS 16.1.1 20B101 kernel: IOUSBDeviceInterfaceUserClient exists and its dispatcher matches the 12 selector argument counts used here. The source archive includes reproducible evidence and the native-kernel test; no proprietary kernel binary is redistributed.
+- Replaced the generic "unavailable on this build" message with the exact IOServiceOpen return code and error classification. No kernel patch or user-client type scanning was added.
+- Build/signing/package, native ABI and seven mocked installer checks pass. Permission correction effects and physical USB keyboard operation remain unverified. Daybreak executables and its existing source are unchanged.
+
 ## USBKeys 0.1.2 (3): operation and failure reporting (2026-11-13)
 
 - Fixed the reporting gap behind the user's one-line controller log: snapshot calls/results were omitted, and a failed IPC request could leave old diagnostics visible. Reports now include operation, last step, full status, active state, and service version/PID; IPC errors include stage and errno.

@@ -44,6 +44,13 @@ live successful setup response. The rootless installer corrections are retained.
 This is not a verified fix for USB keyboard operation; physical snapshot capture,
 journal/export access and HID operation remain unverified.
 
-`USBKeys-0.1.2-source.zip` contains the complete source and build instructions.
+**0.1.3 (4)** corrects the helper's IOKit class exception key and adds USB
+device access. It verifies the signed permissions and reports their runtime
+state. IOServiceOpen failures now include the exact kernel code and error class.
+The actual 20B101 kernel contains IOUSBDeviceInterfaceUserClient, and its 12 used
+dispatcher signatures match. This establishes ABI evidence, not that the user's
+open failure is resolved. Physical USB operation remains unverified.
+
+`USBKeys-0.1.3-source.zip` contains the complete source, evidence and build instructions.
 Run `python3 scripts/build_usbkeys_sileo.py` from the repository root to rebuild
 these indexes. SHA256SUMS and Release contain hashes for byte verification.
