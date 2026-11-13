@@ -52,3 +52,29 @@ Apple's generic async dispatch callback receives refcon/result/args/count:
 https://github.com/apple-oss-distributions/IOKitUser/blob/main/IOKitLib.h .
 Standard report descriptors normally remain kernel-served and need not appear
 in the class counters. A count of zero is not proof of host enumeration failure.
+
+## Review of 0.1.6 claims
+
+The supplied 0.1.5 report contains six host HID class setup requests, two each
+of SET_REPORT, SET_IDLE and SET_PROTOCOL. This demonstrates host interaction;
+it contradicts claims that the target never enumerated at all. The report's
+`completed` counter belongs only to class-control callbacks on EP0. It cannot
+establish failure of the separate synchronous interrupt-IN selector 14.
+
+Native `_createBuffer` at 0xfffffff009d69180 writes the value at stack offset
+0 to output scalar 0 (instructions at 0xfffffff009d691d8..0xfffffff009d691e0).
+It then loads that same stack value into x10 and stores it as output scalar 2
+(0xfffffff009d691e4..0xfffffff009d691e8). Thus the source-level pointer/token
+substitution in 0.1.6 has no effect on this firmware. A unit test with different
+synthetic values checks packing only, not this native behavior.
+
+Registration flags were changed from 1/0/0 to 1/1/1. This enables data-stage
+notifications; its effect on target input is unverified. It does not by itself
+prove the previous host control transactions failed. Do not present 0.1.6 as
+an established fix for the user's input failure.
+
+The unresolved boundary is between interrupt reports on the USB bus and target
+input handling. A USB host descriptor/transfer capture or target HID logs are
+needed to distinguish a malformed/rejected report from Recovery Assistant
+ignoring an otherwise valid keyboard. This environment has no connected source
+or target iPhone. Compilation and source analysis cannot perform that test.

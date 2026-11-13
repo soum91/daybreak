@@ -2,7 +2,7 @@
 
 ## USBKeys 0.1.6 (7)
 
-- Correct the native HID control buffer argument to use its allocation token.
+- Correction: the control buffer address-to-token substitution is a no-op on 20B101 because allocation outputs 0 and 2 are identical. The earlier claim of a demonstrated buffer-argument fix was unsupported.
 - Enable IN/OUT control data completion callbacks so OUT status acknowledgements run.
 - Report keyboard interrupt transfer counters separately from EP0 callbacks. Hardware target input remains unverified.
 

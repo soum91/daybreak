@@ -1,11 +1,11 @@
 # Changelog
 
-## 0.1.6 (7): control buffer token and data-stage callbacks
+## 0.1.6 (7): data-stage callbacks and interrupt counters
 
-- Pass the mapped allocation token to native selector 9, which resolves it through the same buffer lookup as selector 14. Previously a userspace pointer was passed for control payloads.
+- Correction to the initial release claim: replacing the control buffer address with its token is a no-op on native 20B101. `_createBuffer` writes the same value into outputs 0 and 2. It must not be described as a demonstrated transport fix.
 - Enable both IN and OUT control data notifications. OUT completions now reach the existing status acknowledgement handler rather than leaving it disabled during registration.
 - Add separate interrupt IN attempt, completion, byte and error counters. EP0 control-data completions and kernel-served descriptor callbacks cannot establish interrupt-transfer failure.
-- Physical target input remains unverified. This corrects concrete native API misuse; it is not evidence of Recovery Assistant compatibility.
+- Physical target input remains unverified. The callback and counter changes do not establish that Recovery Assistant accepts this keyboard. No root cause for the input failure has been demonstrated.
 
 ## 0.1.5 (6): HID host control requests and live activation evidence
 
