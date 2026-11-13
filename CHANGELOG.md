@@ -1,5 +1,12 @@
 # Changelog
 
+## USBKeys 0.1.2 (3): operation and failure reporting (2026-11-13)
+
+- Fixed the reporting gap behind the user's one-line controller log: snapshot calls/results were omitted, and a failed IPC request could leave old diagnostics visible. Reports now include operation, last step, full status, active state, and service version/PID; IPC errors include stage and errno.
+- Added a diagnostic-only journal written before private USB calls and a Last result button that reads it without contacting the service. Preserve interrupted-stage evidence across service restart; log no typed input, serial numbers, or registry property values.
+- Disable key controls until live setup succeeds, reject aliased snapshots before editing, and report service Objective-C exceptions. Prevent a repeat setup in the same boot after a service restart loses an interrupted USB publication's restoration snapshot.
+- Retained rootless installer and binary-signing checks. Build/package checks, seven mocked installer tests and keyboard mapping tests pass. USB operation and physical diagnostic access remain unverified; this release does not claim to fix the unknown USB compatibility failure.
+
 ## USBKeys 0.1.1-1: rootless installer correction (2026-11-13)
 
 - Rebuild only; both signed binaries and app metadata are unchanged from 0.1.1 (2). The user confirmed app UI launch but reported dpkg exit 127 because `/bin/launchctl` does not exist on their Dopamine installation.

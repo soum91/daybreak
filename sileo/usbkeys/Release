@@ -7,10 +7,10 @@ Architectures: iphoneos-arm64
 Components: main
 Description: Experimental USB HID keyboard for Dopamine on iOS 16
 MD5Sum:
- 80f30d71958dc10a582d39d5dadf43e4 584 Packages
- 0916e79552d4ca8f9623410dfbf75755 422 Packages.gz
- 423ee17ef5be6d9cab744c96cfb7a547 458 Packages.bz2
+ e5918da9dbaba3c7d7f7cd2e1383d7e3 580 Packages
+ bb032f1a4a7af51c978aac28a8588418 417 Packages.gz
+ fb026ebe60d6b476827228c8829d9bc8 455 Packages.bz2
 SHA256:
- f8c55f346c83ffeb32f212a8ca5bb1cc19ed35a12bfd159aeef433cd00382a6d 584 Packages
- b90296c108618d547a6da22d59abbc8d9f55e28e3e073f7562f58dc5c0d8d5a7 422 Packages.gz
- ed32d73f83600d7cebc98423e8b036b22442e7f48e23d2139f00ac78cc9ee6cb 458 Packages.bz2
+ 904a943e82936792d0f894e23f899452caa15be430ddd7e5113f69c366a4b21b 580 Packages
+ fd9ba08512a480f5a85f9e3eefc8883031cddb88a75b0a6a5e09911a63bae496 417 Packages.gz
+ db7862667725caa1c3dd91bb60384a3fec321edd8f5e851a2ac743d229366b21 455 Packages.bz2

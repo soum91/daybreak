@@ -36,6 +36,14 @@ Seven mocked installer cases pass. Actual device service startup is unverified.
 The signed executables and app metadata are unchanged from 0.1.1 (2); the
 in-app version remains 0.1.1 (2). This is a packaging-only rebuild.
 
-`USBKeys-0.1.1-1-source.zip` contains the complete source and build instructions.
+**0.1.2 (3)** fixes incomplete operation reporting. Snapshot results, phase,
+operation, full status, service version/PID and active state now appear together.
+Last result reads a diagnostic-only journal independently of the service socket;
+IPC errors identify the failing stage and errno. Keys remain disabled until a
+live successful setup response. The rootless installer corrections are retained.
+This is not a verified fix for USB keyboard operation; physical snapshot capture,
+journal/export access and HID operation remain unverified.
+
+`USBKeys-0.1.2-source.zip` contains the complete source and build instructions.
 Run `python3 scripts/build_usbkeys_sileo.py` from the repository root to rebuild
 these indexes. SHA256SUMS and Release contain hashes for byte verification.
