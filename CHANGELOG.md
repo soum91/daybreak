@@ -1,5 +1,12 @@
 # Changelog
 
+## USBKeys 0.1.1-1: rootless installer correction (2026-11-13)
+
+- Rebuild only; both signed binaries and app metadata are unchanged from 0.1.1 (2). The user confirmed app UI launch but reported dpkg exit 127 because `/bin/launchctl` does not exist on their Dopamine installation.
+- Fixed install/removal scripts to resolve Procursus launchctl through rootless PATH; added launchctl/uikittools dependencies, runtime directory setup, bootstrap/load handling, and socket-readiness checks.
+- Seven mocked installer test cases pass. Package binary preservation and APT metadata checks pass. Physical service startup and USB keyboard operation remain unverified.
+- Replaced the 0.1.1 APT candidate and source archive with 0.1.1-1. Daybreak app code and its Sileo source are unchanged.
+
 ## USBKeys 0.1.1 (2): corrected launch binaries (2026-11-13)
 
 - Replaced the broken USBKeys 0.1.0 package with 0.1.1. The old signer added a 16-byte signature load command over the first 16 bytes of executable code in both binaries. Rebuilt with iOS clang/ld64 and reserved header padding.
