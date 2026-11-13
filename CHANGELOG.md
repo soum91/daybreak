@@ -1,5 +1,11 @@
 # Changelog
 
+## USBKeys 0.1.4 (5): controller-create hang detection (2026-11-13)
+
+- The user's 0.1.2 report stopped at "BEGIN: Create controller" with no return code: `IOUSBDeviceControllerCreate` never returned, so no USB change was ever attempted. Create now runs on a worker thread with a 4 s deadline. On timeout the service reports "hung", refuses further USB calls, replies, and exits so launchd relaunches it clean; the hung report is preserved for Last result.
+- Check USB and Start first run a read-only service scan: whether an `IOUSBDeviceController` service exists, plus counts of USB device-mode IOService class names (usbdevice/otg/synopsys/dwc/usbmux/tristar/hydra/usbport). Class names only, no property values or identifiers.
+- Retains 0.1.3's entitlement correction. Built with clang 18 + ld64.lld against the iPhoneOS 16.5 SDK; signing, entitlement, package and seven installer checks pass. Physical behavior is unverified: this release diagnoses the hang, it does not fix it.
+
 ## USBKeys 0.1.3 (4): USB user-client permission correction (2026-11-13)
 
 - Corrected the helper's IOKit class exception entitlement key, added USB device access, and added a signed-binary permission gate. Runtime reports include only the relevant permission grant states and advertised user-client class.

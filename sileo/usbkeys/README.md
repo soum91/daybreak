@@ -51,6 +51,13 @@ The actual 20B101 kernel contains IOUSBDeviceInterfaceUserClient, and its 12 use
 dispatcher signatures match. This establishes ABI evidence, not that the user's
 open failure is resolved. Physical USB operation remains unverified.
 
-`USBKeys-0.1.3-source.zip` contains the complete source, evidence and build instructions.
+`USBKeys-0.1.4-source.zip` contains the complete source, evidence and build instructions.
 Run `python3 scripts/build_usbkeys_sileo.py` from the repository root to rebuild
 these indexes. SHA256SUMS and Release contain hashes for byte verification.
+
+**0.1.4 (5)** adds hang detection. The 0.1.2 report showed the service stuck inside
+`IOUSBDeviceControllerCreate` with no return code. Create now has a 4 s deadline;
+on timeout the service reports it, refuses further USB calls and restarts. Check USB
+and Start also list whether an `IOUSBDeviceController` service exists and which USB
+device-mode IOService classes are present (names only). Diagnostic only; the hang
+itself is not fixed.
