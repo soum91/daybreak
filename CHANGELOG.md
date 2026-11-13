@@ -1,5 +1,10 @@
 # Changelog
 
+## Shared catalog: portable compressed index (2026-11-13)
+
+- The first successful GitHub sync exposed a Python 3.12/3.13 difference in the gzip OS header byte. Standardized gzip headers across Linux sync and macOS publication, with a regression test, so identical package indexes do not produce different Release hashes solely because of the host Python version.
+- Catalog-only update: no package archive, package version or application implementation changes. Eight catalog behavior tests and the installed-version check pass; the initial hosted sync also completed successfully.
+
 ## Shared Sileo catalog: soum91 Tweaks (2026-11-13)
 
 - Combined seven existing rootless packages into the existing `/sileo/` source: Daybreak 0.2.14, USBKeys 0.1.5, Timbre Audio 0.10.0, HomePod Bridge 0.1.5, its homed experiment 0.1.8, Reynard Default Browser 0.1.0.13 and WebKit Patch 0.1.0.9. Exact archives, package IDs, versions, dependencies and experimental labels are preserved. No app/tweak implementation changes or rebuilt binaries.

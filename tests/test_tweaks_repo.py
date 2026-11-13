@@ -16,6 +16,13 @@ spec.loader.exec_module(repo)
 
 
 class CatalogTests(unittest.TestCase):
+    def test_platform_independent_gzip(self):
+        data = b'Package: example\n\n'
+        archive = repo.portable_gzip(data)
+        self.assertEqual(archive[4:8], b'\0\0\0\0')
+        self.assertEqual(archive[9], 255)
+        self.assertEqual(gzip.decompress(archive), data)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

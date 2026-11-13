@@ -5,6 +5,7 @@ import bz2
 import gzip
 import hashlib
 import html
+import io
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -16,6 +17,15 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "https://raw.githubusercontent.com/soum91/daybreak/main/sileo/"
 GENERATED = {"Filename", "Size", "MD5sum", "SHA1", "SHA256", "SHA512"}
+
+
+def portable_gzip(data):
+    # gzip.compress(mtime=0) used different OS header bytes in Python 3.12/3.13.
+    # GzipFile produces a stable header on both Linux sync and macOS publishers.
+    output = io.BytesIO()
+    with gzip.GzipFile(filename="", fileobj=output, mode="wb", mtime=0) as stream:
+        stream.write(data)
+    return output.getvalue()
 
 
 def paragraphs(text):
@@ -164,7 +174,7 @@ def build(root=ROOT, sync=False):
                 record["presentation"] = presentation
             catalog.append(record)
     packages = ("\n\n".join(s for _, s in sorted(stanzas)) + "\n\n").encode()
-    pending.update({"Packages": packages, "Packages.gz": gzip.compress(packages, mtime=0), "Packages.bz2": bz2.compress(packages)})
+    pending.update({"Packages": packages, "Packages.gz": portable_gzip(packages), "Packages.bz2": bz2.compress(packages)})
     release = ["Origin: soum91 Tweaks", "Label: soum91 Tweaks", "Suite: stable", "Codename: daybreak", "Version: 1.0",
         "Architectures: iphoneos-arm64", "Components: main", "Description: Shared rootless jailbreak packages by soum91"]
     for field, algorithm in (("MD5Sum", "md5"), ("SHA256", "sha256")):
