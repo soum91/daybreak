@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6 (7): control buffer token and data-stage callbacks
+
+- Pass the mapped allocation token to native selector 9, which resolves it through the same buffer lookup as selector 14. Previously a userspace pointer was passed for control payloads.
+- Enable both IN and OUT control data notifications. OUT completions now reach the existing status acknowledgement handler rather than leaving it disabled during registration.
+- Add separate interrupt IN attempt, completion, byte and error counters. EP0 control-data completions and kernel-served descriptor callbacks cannot establish interrupt-transfer failure.
+- Physical target input remains unverified. This corrects concrete native API misuse; it is not evidence of Recovery Assistant compatibility.
+
 ## 0.1.5 (6): HID host control requests and live activation evidence
 
 - Added the missing USB HID control-request handler: GET/SET_PROTOCOL, GET/SET_IDLE, GET/SET_REPORT, plus a descriptor fallback. A dedicated notification run loop handles setup, IN completion and OUT data/status phases; a separate mapped buffer receives and discards LED reports. Stop joins the callback thread before releasing its buffers.

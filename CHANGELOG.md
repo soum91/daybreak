@@ -1,5 +1,11 @@
 # Changelog
 
+## USBKeys 0.1.6 (7)
+
+- Correct the native HID control buffer argument to use its allocation token.
+- Enable IN/OUT control data completion callbacks so OUT status acknowledgements run.
+- Report keyboard interrupt transfer counters separately from EP0 callbacks. Hardware target input remains unverified.
+
 ## Shared catalog: portable compressed index (2026-11-13)
 
 - The first successful GitHub sync exposed a Python 3.12/3.13 difference in the gzip OS header byte. Standardized gzip headers across Linux sync and macOS publication, with a regression test, so identical package indexes do not produce different Release hashes solely because of the host Python version.

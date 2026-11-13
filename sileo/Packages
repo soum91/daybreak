@@ -92,7 +92,7 @@ SHA256: a25d1317118b6448a10a2434e8b9d38c50678b76dc53f70994e2520623e16897
 
 Package: dev.usbkeys.keyboard
 Name: USBKeys Experimental
-Version: 0.1.5
+Version: 0.1.6
 Architecture: iphoneos-arm64
 Description: Experimental physical USB HID keyboard for Dopamine. Hardware support is unverified.
 Maintainer: soum91
@@ -100,8 +100,8 @@ Author: soum91
 Section: Utilities
 Depends: firmware (>= 16.0), launchctl, uikittools
 Icon: https://raw.githubusercontent.com/soum91/daybreak/main/sileo/usbkeys/CydiaIcon.png
-Filename: debs/dev.usbkeys.keyboard_0.1.5_e1443b0644e4.deb
-Size: 36516
-MD5sum: 70ab9221e738174dd4c2c17d225ce3fc
-SHA256: e1443b0644e4970d00652950f656d2d102a4471136dc150a699c6f04815f6106
+Filename: debs/dev.usbkeys.keyboard_0.1.6_b0e16e8fae2b.deb
+Size: 36796
+MD5sum: 958e53390b66f14b7c0c408de16cb473
+SHA256: b0e16e8fae2baa08f198e9ac326011f62434119daa0b4b1b8bd7db56b9a3af90
 

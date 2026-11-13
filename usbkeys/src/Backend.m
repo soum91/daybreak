@@ -27,6 +27,8 @@ static io_service_t (*GetService)(Controller);
 @implementation UKBackend {
   UKUSBControl *_control;
   double _lastReportTime;
+  uint64_t _reportAttempts, _reportCompletions, _reportBytes;
+  IOReturn _reportError;
   Controller _controller;
   Desc _saved;
   io_connect_t _port;
@@ -61,8 +63,9 @@ static io_service_t (*GetService)(Controller);
     _controlSummary=[NSString stringWithFormat:@"Host control requests: %llu; setup replies submitted: %llu; data completions: %llu; rejected: %llu; errors: %llu (last 0x%08x)\nGET_REPORT %llu; SET_REPORT %llu; GET_IDLE %llu; SET_IDLE %llu; GET_PROTOCOL %llu; SET_PROTOCOL %llu; descriptor callbacks %llu\nHID protocol: %@; idle: %u ms\nNative interface active: %@; driver state: %lld; query: 0x%08x\nLocal setup and USB transport do not prove target text input.",stats.requests,stats.replies,stats.completed,stats.rejected,stats.failures,stats.lastError,stats.getReport,stats.setReport,stats.getIdle,stats.setIdle,stats.getProtocol,stats.setProtocol,stats.descriptor,stats.protocol?@"report":@"boot",stats.idle*4,(!r&&count==2)?(driver[0]?@"YES":@"NO"):@"unknown",(long long)driver[1],r];
   }
   if(_controlSummary.length) diagnostics=[diagnostics stringByAppendingFormat:@"\n%@",_controlSummary];
+  diagnostics=[diagnostics stringByAppendingFormat:@"\nInterrupt IN reports attempted: %llu; synchronous completions: %llu; bytes: %llu; last error: 0x%08x\nControl data completions count only EP0, not keyboard interrupt transfers. Descriptor requests can be served by the kernel without callbacks.",_reportAttempts,_reportCompletions,_reportBytes,_reportError];
   if(_previous.length) diagnostics=[NSString stringWithFormat:@"%@\n\n%@",_previous,diagnostics];
-  return @{@"active":@(_active),@"changed":@(_changed||_previousChanged),@"pending":@(_pending),@"phase":_phase?:@"unknown",@"operation":_operation?:@"unknown",@"message":_message?:@"No result",@"diagnostics":diagnostics,@"hung":@(_createHung),@"version":@"0.1.5 (6)",@"pid":@(getpid()),@"boot":UKBootSession(),@"time":@([[NSDate date] timeIntervalSince1970])};
+  return @{@"active":@(_active),@"changed":@(_changed||_previousChanged),@"pending":@(_pending),@"phase":_phase?:@"unknown",@"operation":_operation?:@"unknown",@"message":_message?:@"No result",@"diagnostics":diagnostics,@"hung":@(_createHung),@"version":@"0.1.6 (7)",@"pid":@(getpid()),@"boot":UKBootSession(),@"time":@([[NSDate date] timeIntervalSince1970])};
 }
 - (void)persist { UKWriteJournal([self state]); }
 - (void)note:(NSString *)text {
@@ -241,6 +244,7 @@ static io_service_t (*GetService)(Controller);
   if(_active) return [self result:YES message:@"Already configured."];
   if(_changed) return [self result:NO message:@"Restore the previous session using Stop first."];
   [self begin:@"Start"];
+  _reportAttempts=0; _reportCompletions=0; _reportBytes=0; _reportError=0;
   if(_previousChanged) return [self result:NO message:@"Previous service ended after USB publication. Its restoration snapshot was lost. Disconnect and restart the source iPhone before another attempt."];
   if(![self loadAPI]) return [self result:NO message:@"Required USB symbols missing. No changes made."];
   [self scanServices];
@@ -329,10 +333,12 @@ static io_service_t (*GetService)(Controller);
   return [self result:YES message:@"Keyboard configured locally. Host recognition is unverified. Test one key in a harmless text field."];
 }
 - (IOReturn)report:(const uint8_t *)bytes {
+  _reportAttempts++;
   memcpy(_buffer,bytes,8); uint64_t a[]={_pipe,_token,8,250}, written=0; uint32_t n=1;
   IOReturn r=IOConnectCallScalarMethod(_port,14,a,4,&written,&n);
-  if(!r&&(n!=1||written!=8)) return kIOReturnUnderrun;
-  if(!r) _lastReportTime=clock_gettime_nsec_np(CLOCK_MONOTONIC)/1e9;
+  if(!r&&(n!=1||written!=8)) r=kIOReturnUnderrun;
+  _reportError=r;
+  if(!r) { _reportCompletions++; _reportBytes+=written; _lastReportTime=clock_gettime_nsec_np(CLOCK_MONOTONIC)/1e9; }
   return r;
 }
 // HID SET_IDLE requests schedule only the released state between explicit taps.

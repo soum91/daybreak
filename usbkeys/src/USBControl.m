@@ -3,6 +3,7 @@
 #import <Foundation/Foundation.h>
 #include "USBControl.h"
 #include "HIDControl.h"
+#include "ControlABI.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdlib.h>
@@ -62,8 +63,10 @@ static void UKControlCallback(void *refcon, IOReturn result, uint64_t *args, uin
   if(!handled) c->stats.rejected++;
   c->stats.protocol=c->hid.protocol; c->stats.idle=c->hid.idle;
   pthread_mutex_unlock(&c->lock);
-  // Native: handled, buffer length, mapped address, status, transaction token.
-  uint64_t done[]={handled,size,(uint64_t)c->buffer,0,args[4]};
+  // Native: handled, buffer length, allocation token, status, transaction.
+  // 20B101 resolves scalar 2 through findBuffer(), just like writePipe.
+  // A mapped userspace address is not the allocation's kernel lookup token.
+  uint64_t done[5]; UKControlSetupReply(done,handled,size,c->token,args[4]);
   IOReturn r=IOConnectCallScalarMethod(c->port,9,done,5,NULL,NULL);
   pthread_mutex_lock(&c->lock);
   if(r) { c->stats.failures++; c->stats.lastError=r; }
@@ -109,7 +112,9 @@ IOReturn UKControlStart(io_connect_t port, UKUSBControl **out) {
   if(pthread_create(&c->thread,NULL,UKControlThread,c)) { UKControlStop(c); return kIOReturnNoResources; }
   c->started=true;
   dispatch_semaphore_wait(c->ready,DISPATCH_TIME_FOREVER);
-  uint64_t args[]={1,0,0}, reference[8]={0};
+  // Enable setup plus IN and OUT data completion notifications. OUT must
+  // acknowledge its data stage before the host can finish SET_REPORT.
+  uint64_t args[]={1,1,1}, reference[8]={0};
   reference[kIOAsyncReservedIndex]=wake;
   reference[kIOAsyncCalloutFuncIndex]=(uint64_t)UKControlCallback;
   reference[kIOAsyncCalloutRefconIndex]=(uint64_t)c;
