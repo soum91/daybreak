@@ -22,7 +22,12 @@ source. The package itself is ad-hoc signed for the jailbreak environment.
 These signatures are different from APT repository signatures. Sileo import
 and installation have not been tested on a physical device.
 
-The original compiled package is published unchanged (version 0.1.0, build 1).
-`USBKeys-0.1.0-source.zip` contains its source and build instructions.
+Version 0.1.1 (build 2) fixes a confirmed 0.1.0 packaging defect: the signer
+overwrote the first 16 bytes of executable code in both the app and service.
+The rebuilt binaries use the standard iOS toolchain with reserved signature
+header space. Regression checks reject the old package and confirm signing
+preserves all new code sections. The broken 0.1.0 package is withdrawn.
+
+`USBKeys-0.1.1-source.zip` contains the complete source and build instructions.
 Run `python3 scripts/build_usbkeys_sileo.py` from the repository root to rebuild
 these indexes. SHA256SUMS and Release contain hashes for byte verification.

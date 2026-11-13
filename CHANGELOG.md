@@ -1,5 +1,12 @@
 # Changelog
 
+## USBKeys 0.1.1 (2): corrected launch binaries (2026-11-13)
+
+- Replaced the broken USBKeys 0.1.0 package with 0.1.1. The old signer added a 16-byte signature load command over the first 16 bytes of executable code in both binaries. Rebuilt with iOS clang/ld64 and reserved header padding.
+- Added a mandatory signing regression check: load commands cannot overlap sections, and all __TEXT bytes must match before and after signing. Both old binaries fail; both new binaries pass.
+- Removed automatic USB probing at launch and the app's unnecessary IOKit dependency. Added container entitlements and platform metadata; app version now comes from installed Info.plist. Diagnostics now verify clipboard reads and support native Save report.
+- Updated USBKeys package indexes, checksums, and full source archive; withdrew 0.1.0. No Daybreak executable changes. Physical launch and USB keyboard operation remain unverified.
+
 ## USBKeys experimental Sileo hosting (2026-11-13)
 
 - Added a separate flat APT source at `sileo/usbkeys/`, with the original USBKeys 0.1.0 rootless package, source archive, icon, compressed package indexes, and Release checksums.
