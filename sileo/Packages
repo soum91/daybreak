@@ -9,8 +9,99 @@ Conflicts: com.soum91.daybreak.rootful
 Homepage: https://github.com/soum91/daybreak
 Architecture: iphoneos-arm64
 Version: 0.2.14
-Filename: debs/daybreak-tweak.deb
+Installed-Size: 1064
+Filename: debs/com.soum91.daybreak.tweak_0.2.14_031b3cadd6ac.deb
 Size: 110402
 MD5sum: be50aa9e43a76a4bcc39c59ff5c12452
 SHA256: 031b3cadd6acacc4e2a9d8d0b12bb265f27406a3d372b97f0d80f15a11fb3396
+
+Package: com.soum91.homepodbridge
+Name: HomePod Bridge (Experimental)
+Description: Targets the actual HDSViewService Mach-O executable instead of the ElleKit systemhook library, retaining the exact instruction guard and in-memory patch.
+Maintainer: soum91
+Author: soum91
+Section: Tweaks
+Depends: firmware (>= 16.1), ellekit
+Architecture: iphoneos-arm64
+Version: 0.1.5
+Installed-Size: 72
+Filename: debs/com.soum91.homepodbridge_0.1.5_68df1c5ff28c.deb
+Size: 4124
+MD5sum: 6a99fffbfa192163082367f2edad9a06
+SHA256: 68df1c5ff28c60bee0415c9a5a06e64cf04113a3a43a10894d299c0a801496b2
+
+Package: com.soum91.homepodbridge.homedprobe
+Name: HomePodBridge homed Capability Bridge (Experimental)
+Description: Opt-in iOS 16.1.1 HomePod pairing experiment: preserve the proven minimum-version probe and selectively test the Apple-media capability gate. Pairing is not guaranteed.
+Maintainer: soum91
+Author: soum91
+Section: Tweaks
+Depends: firmware (>= 16.1), ellekit, com.soum91.homepodbridge (>= 0.1.4)
+Architecture: iphoneos-arm64
+Version: 0.1.8
+Installed-Size: 92
+Filename: debs/com.soum91.homepodbridge.homedprobe_0.1.8_aa2f971e2979.deb
+Size: 5638
+MD5sum: 4862e6da69a891fe1a2bc3611e315b10
+SHA256: aa2f971e297902d87b78b1b880dde86474bb4fa66bdba99edbd4db75106a0813
+
+Package: com.soum91.reynarddefault
+Name: Reynard Default Browser
+Description: Opens web links from other apps in Reynard instead of Safari (experimental)
+Maintainer: soum91
+Author: soum91
+Section: Tweaks
+Depends: ellekit
+Architecture: iphoneos-arm64
+Version: 0.1.0.13
+Installed-Size: 172
+Filename: debs/com.soum91.reynarddefault_0.1.0.13_b880b02d5370.deb
+Size: 10080
+MD5sum: dc039b2aa3e8d782104118bb714f9edb
+SHA256: b880b02d5370ad6a57ef86120f11a0a6d9064f4b4fdb8e09b578bbabd9776dc3
+
+Package: com.soum91.timbreaudio
+Name: Timbre Audio (Experimental)
+Description: Experimental system EQ (16 parametric bands) with spatial, reverb, crossfeed, compressor and limiter; EQE-style Timbre controller. Device route not verified
+Maintainer: soum91
+Author: soum91
+Section: Tweaks
+Depends: ellekit
+Architecture: iphoneos-arm64
+Version: 0.10.0
+Installed-Size: 2152
+Filename: debs/com.soum91.timbreaudio_0.10.0_9c827f9b2073.deb
+Size: 365414
+MD5sum: e40ba96c058e4c390e163781b6b2b3f4
+SHA256: 9c827f9b2073f1d5ab6163c6ee671741dcc9b084f2cd648ebadc2646560f1877
+
+Package: com.soum91.webkitpatch
+Name: WebKit Patch
+Description: Brings missing modern web features to the old system WebKit (JS polyfills, optional UA and feature flags) in Safari and apps (experimental)
+Maintainer: soum91
+Author: soum91
+Section: Tweaks
+Depends: ellekit, preferenceloader
+Architecture: iphoneos-arm64
+Version: 0.1.0.9
+Installed-Size: 412
+Filename: debs/com.soum91.webkitpatch_0.1.0.9_a25d1317118b.deb
+Size: 14928
+MD5sum: 26a78604b1759835d9bffd3fda5d9240
+SHA256: a25d1317118b6448a10a2434e8b9d38c50678b76dc53f70994e2520623e16897
+
+Package: dev.usbkeys.keyboard
+Name: USBKeys Experimental
+Version: 0.1.5
+Architecture: iphoneos-arm64
+Description: Experimental physical USB HID keyboard for Dopamine. Hardware support is unverified.
+Maintainer: soum91
+Author: soum91
+Section: Utilities
+Depends: firmware (>= 16.0), launchctl, uikittools
+Icon: https://raw.githubusercontent.com/soum91/daybreak/main/sileo/usbkeys/CydiaIcon.png
+Filename: debs/dev.usbkeys.keyboard_0.1.5_e1443b0644e4.deb
+Size: 36516
+MD5sum: 70ab9221e738174dd4c2c17d225ce3fc
+SHA256: e1443b0644e4970d00652950f656d2d102a4471136dc150a699c6f04815f6106
 

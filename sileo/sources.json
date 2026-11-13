@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {"name": "Daybreak", "local_deb": "sileo/debs/daybreak-tweak.deb", "packages": ["com.soum91.daybreak.tweak"]},
+    {"name": "USBKeys", "local_index": "sileo/usbkeys/Packages", "packages": ["dev.usbkeys.keyboard"]},
+    {"name": "Timbre", "index_url": "https://raw.githubusercontent.com/soum91/timbre/gh-pages/Packages", "packages": ["com.soum91.timbreaudio"]},
+    {"name": "HomePodBridge", "index_url": "https://raw.githubusercontent.com/soum91/homepodbridge/gh-pages/Packages", "packages": ["com.soum91.homepodbridge", "com.soum91.homepodbridge.homedprobe"]},
+    {"name": "Reynard tweaks", "index_url": "https://raw.githubusercontent.com/soum91/reynard-browser/gh-pages/Packages", "packages": ["com.soum91.reynarddefault", "com.soum91.webkitpatch"]}
+  ]
+}

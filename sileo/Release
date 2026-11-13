@@ -1,16 +1,16 @@
-Origin: Daybreak
-Label: Daybreak Dopamine
+Origin: soum91 Tweaks
+Label: soum91 Tweaks
 Suite: stable
 Codename: daybreak
 Version: 1.0
 Architectures: iphoneos-arm64
 Components: main
-Description: Rootless Daybreak tweak for iOS 16
+Description: Shared rootless jailbreak packages by soum91
 MD5Sum:
- 4b3f9a6baff301cd8412ade613c1f5b6 674 Packages
- f2ba67d6146508b9b518309b67364dae 465 Packages.gz
- 77f0a8dada05858a97aaedd05e15d576 510 Packages.bz2
+ 8570d1acb1a12414fd6492de9966ed68 4139 Packages
+ 84fb2150942a8b6b957341a2175107e7 1723 Packages.gz
+ fc8e7c605731123ddc1624b02ba3a112 1871 Packages.bz2
 SHA256:
- 573e91ab7f8d9cf044970885b4c11df71fdfff0903dc95fd42ce1f5c05481427 674 Packages
- c7ef452739d2bdce284786da451c6264e702a2dcb1d8f5876dd28db4d5580dee 465 Packages.gz
- ce8aa974f1bcd86b41700d1cf4e8b4dd48cecaa409ef110e86324cf28924db67 510 Packages.bz2
+ 8621965fec4cedc26854a6bbf1f6ef5023230d1f33a2133bf10ad175a315eaca 4139 Packages
+ 787c4fe4b30ddc77ce67b1c7379c9d9192e96a926eca79822e3bb9a34235ed6d 1723 Packages.gz
+ d972530ea7113f42fcaecaf2e1a142267d563a4dcf30add04ec2ef72ca600fe7 1871 Packages.bz2

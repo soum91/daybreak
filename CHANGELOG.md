@@ -1,5 +1,13 @@
 # Changelog
 
+## Shared Sileo catalog: soum91 Tweaks (2026-11-13)
+
+- Combined seven existing rootless packages into the existing `/sileo/` source: Daybreak 0.2.14, USBKeys 0.1.5, Timbre Audio 0.10.0, HomePod Bridge 0.1.5, its homed experiment 0.1.8, Reynard Default Browser 0.1.0.13 and WebKit Patch 0.1.0.9. Exact archives, package IDs, versions, dependencies and experimental labels are preserved. No app/tweak implementation changes or rebuilt binaries.
+- Added explicit upstream selection, provenance, Debian version ordering, archive/index identity and hash validation, rejection of downgrades and same-version replacements, content-addressed package paths and matching compressed indexes. Legacy sources remain available.
+- Updated Daybreak and USBKeys publishing scripts to regenerate the full catalog without deleting unrelated packages. Added an hourly/manual Linux sync and retry logic that regenerates against the latest catalog if another publisher wins a push race.
+- Added seven repository behavior tests covering version selection, corruption, conflicting versions, preservation of other packages during updates, and failure without replacing the published index. Installed-version checks and local full-catalog hash/index checks pass. Source/package delivery is verified after publication; physical Sileo migration is unverified.
+
+
 ## USBKeys 0.1.5 (6): HID host control requests (2026-11-13)
 
 - Added the missing USB HID control-request handler: GET/SET_PROTOCOL, GET/SET_IDLE, GET/SET_REPORT, plus a descriptor fallback. A dedicated notification run loop handles setup, IN completion and OUT data/status phases; a separate mapped buffer receives and discards LED reports. Stop joins the callback thread before releasing its buffers.

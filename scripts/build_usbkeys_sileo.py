@@ -32,3 +32,5 @@ for label,algorithm in [('MD5Sum','md5'),('SHA256','sha256')]:
 (OUT/'Release').write_text('\n'.join(release)+'\n')
 (OUT/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(OUT))+'\n' for p in debs))
 print('USBKeys APT source generated:',len(debs),'package(s)')
+from build_tweaks_repo import build
+build(ROOT)

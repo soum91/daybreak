@@ -1,5 +1,10 @@
 # Daybreak
 
+**Shared jailbreak source:** [soum91 Tweaks](https://raw.githubusercontent.com/soum91/daybreak/main/sileo/)
+now hosts Daybreak, USBKeys, Timbre Audio, HomePodBridge and Reynard tweaks.
+See [Sileo catalog publishing](sileo/README.md) for the package list and update process.
+
+
 ## Dopamine pivot: rootless tweak for iOS 16.1.1
 
 Daybreak now also ships as a **Dopamine rootless tweak** for the iPhone 13 Pro Max
