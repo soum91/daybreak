@@ -59,3 +59,7 @@ mandatory for actual app/tweak changes; hosting-only updates require factual not
 index/package checks and `python3 scripts/check_version_ui.py`. The `[catalog only]`
 commit marker is reserved for changes without app/tweak implementation changes; it
 skips only the unchanged Daybreak compilation job, while catalog/version CI still runs.
+
+## Mandatory file picker / import policy (release-blocking)
+
+Every file picker, browser, import, export, signing or upload workflow in this repository **MUST** comply with [MANDATORY_FILE_PICKER.md](https://github.com/soum91/tweaks/blob/main/MANDATORY_FILE_PICKER.md). This covers future apps and all platforms. Files must be selectable with a real tap, return to the caller, copy safely to app-owned storage, complete the import and give visible success/error. Real-device end-to-end testing is required before claiming success. Merely opening Files or compiling is insufficient. Preserve existing project policies. Codex and Claude must propagate this rule to new app repositories.
